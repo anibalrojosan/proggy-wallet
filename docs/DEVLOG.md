@@ -44,3 +44,20 @@
 
 ---
 
+[2026-01-17]
+
+## Phase1-01 and Phase1-02 Done
+
+Created utility functions in `backend/modules/utils.py`
+  
+- Add read_json_file() and write_json_file() for JSON file I/O
+- Add read_csv_file() and write_csv_file() for CSV file I/O
+- Add validate_amount() function for positive amount validation
+
+Create authentication functions in `backend/modules/auth.py`
+
+- Add load_user() to load all users data from the JSON file.
+- Add get_user() to get the user data by username.
+- Add validate_credentials() to validate the username and password.
+
+**Next steps**: continue with the wallet transactions module in branch `backend-wallet`.
