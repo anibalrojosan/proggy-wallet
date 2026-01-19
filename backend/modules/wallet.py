@@ -10,8 +10,6 @@ This modules contains the following functions:
 """
 
 from datetime import datetime
-from pathlib import Path
-from typing import Any
 
 from backend.modules import auth, utils
 
@@ -24,7 +22,8 @@ CSV_COLUMNS = ["date", "type", "from_user", "to_user", "amount", "balance"]
 
 def calculate_balance(transactions: list, initial_balance: float) -> float:
     """Calculate balance from transaction history.
-    Check if the transaction is a deposit or transfer and updates the balance accordingly.
+    Check if the transaction is a deposit or transfer and updates the
+    balance accordingly.
 
     Args:
         transactions: List of transaction dictionaries.
@@ -130,7 +129,8 @@ def record_transaction(transaction_data: dict) -> None:
 
 def deposit(user: str, amount: float, source: str = 'external') -> dict:
     """Process deposit transaction.
-    Deposit: money that comes from an EXTERNAL SOURCE, like a bank transfer or a cash deposit.
+    Deposit: money that comes from an EXTERNAL SOURCE, like a bank transfer or a
+    cash deposit.
 
     Args:
         user: Username receiving the deposit.
@@ -216,7 +216,9 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
     receiver_transactions = get_transaction_history(to_user)
 
     sender_current_balance = calculate_balance(sender_transactions, sender_initial)
-    receiver_current_balance = calculate_balance(receiver_transactions, receiver_initial)
+    receiver_current_balance = calculate_balance(
+        receiver_transactions, receiver_initial
+        )
 
     # Calculate new balances
     sender_new_balance = sender_current_balance - amount
