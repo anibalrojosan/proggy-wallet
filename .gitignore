@@ -26,4 +26,6 @@ Thumbs.db
 backend/data/*.csv
 backend/data/*.json
 !backend/data/.gitkeep
+
 github_projects.md
+improvements.md

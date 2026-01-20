@@ -61,3 +61,42 @@ Create authentication functions in `backend/modules/auth.py`
 - Add validate_credentials() to validate the username and password.
 
 **Next steps**: continue with the wallet transactions module in branch `backend-wallet`.
+
+---
+
+[2026-01-18]
+
+## Phase1-03: Wallet Transactions Module Completed
+
+• Implemented complete wallet transactions module in `backend/modules/wallet.py`
+  - `calculate_balance()` - Calculates balance from transaction history
+  - `deposit()` - Processes deposit transactions with configurable source identifier
+  - `transfer()` - Handles user-to-user transfers (creates transfer_out and transfer_in records)
+  - `validate_transfer_balance()` - Validates sufficient balance before transfers
+  - `record_transaction()` - Saves transactions to CSV file
+  - `get_transaction_history()` - Retrieves all transactions for a user
+
+• Defined CSV structure for transaction persistence
+  - Columns: `date`, `type`, `from_user`, `to_user`, `amount`, `balance`
+  - Transaction types: `deposit`, `transfer_in`, `transfer_out`
+  - CSV file automatically created on first transaction
+
+• Implemented validation logic
+  - Positive amount validation using `utils.validate_amount()`
+  - Balance sufficiency check to prevent overdrafts on transfers
+  - User existence validation for deposits and transfers
+
+• Deposit function with source identifier
+  - Defined `from_user` to a configurable source parameter
+  - Default source: `"external"`, supports custom sources (e.g., `"bank"`, `"card"`, `"cash"`)
+
+
+• Manual testing and validation
+  - Created comprehensive test script to validate all wallet functions
+  - Tested edge cases: negative amounts, insufficient balance, non-existent users
+  - Verified transaction CSV creation and data persistence
+  - Confirmed balance calculations are accurate across all transaction types
+
+**Current Status:** Phase1-03 complete. All acceptance criteria met. Ready to proceed with Phase1-04 (main script integration) or move to frontend sprints.
+
+---
