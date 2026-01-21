@@ -17,7 +17,7 @@ from backend.modules import auth, utils
 TRANSACTIONS_FILE = "backend/data/transactions.csv"
 
 # CSV column names
-CSV_COLUMNS = ["date", "type", "from_user", "to_user", "amount", "balance"]
+CSV_COLUMNS = ["date", "owner", "type", "from_user", "to_user", "amount", "balance", "description"]
 
 
 def calculate_balance(transactions: list, initial_balance: float, user: str) -> float:
@@ -36,17 +36,17 @@ def calculate_balance(transactions: list, initial_balance: float, user: str) -> 
     balance = initial_balance
 
     for transaction in transactions:
-        trans_type = transaction.get("type", "")
-        amount = float(transaction.get("amount", 0))
-        from_user = transaction.get("from_user", "")
-        to_user = transaction.get("to_user", "")
+        # CRITICAL: Only process the record if the 'owner' is the current user
+        if transaction.get("owner") == user:
+            trans_type = transaction.get("type", "")
+            amount = float(transaction.get("amount", 0))
 
-        if trans_type == "deposit" and to_user == user:
-            balance += amount
-        elif trans_type == "transfer_in" and to_user == user:
-            balance += amount
-        elif trans_type == "transfer_out" and from_user == user:
-            balance -= amount
+            # If it's a deposit or incoming transfer, add the amount
+            if trans_type in ["deposit", "transfer_in"]:
+                balance += amount
+            # If it's an outgoing transfer, subtract the amount
+            elif trans_type == "transfer_out":
+                balance -= amount
 
     return balance
 
@@ -66,23 +66,13 @@ def get_transaction_history(user: str) -> list:
     except FileNotFoundError:
         return []
 
-    user_transactions = []
-    for transaction in all_transactions:
-        from_user = transaction.get("from_user", "")
-        to_user = transaction.get("to_user", "")
-        trans_type = transaction.get("type", "")
-
-        # SMART FILTER:
-        # 1. If it's an outgoing transaction, only show if I'm the sender (from_user)
-        if trans_type == "transfer_out" and from_user == user:
-            user_transactions.append(transaction)
-        
-        # 2. If it's an incoming transaction or a deposit, only show if I'm the receiver (to_user)
-        elif trans_type in ["transfer_in", "deposit"] and to_user == user:
-            user_transactions.append(transaction)
+    # Direct filter: Only bring the rows that belong to the user
+    user_transactions = [
+        transaction for transaction in all_transactions 
+        if transaction.get("owner") == user
+    ]
 
     return user_transactions
-
 
 def validate_transfer_balance(user: str, amount: float) -> bool:
     """Validate if the user has sufficient balance for making a transfer.
@@ -173,11 +163,13 @@ def deposit(user: str, amount: float, source: str = 'external') -> dict:
     # Create transaction record
     transaction = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "owner": user,
         "type": "deposit",
         "from_user": source,
-        "to_user": user,
+        "to_user": user,  
         "amount": str(amount),
         "balance": str(new_balance),
+        "description": f"Deposit of {amount} from {source}",
     }
 
     # Record transaction
@@ -240,21 +232,25 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
     # Create transfer_out transaction for sender
     transfer_out = {
         "date": timestamp,
+        "owner": from_user,
         "type": "transfer_out",
         "from_user": from_user,
         "to_user": to_user,
         "amount": str(amount),
         "balance": str(sender_new_balance),
+        "description": f"Transfer of {amount} to {to_user}",
     }
 
     # Create transfer_in transaction for receiver
     transfer_in = {
         "date": timestamp,
+        "owner": to_user,
         "type": "transfer_in",
         "from_user": from_user,
         "to_user": to_user,
         "amount": str(amount),
         "balance": str(receiver_new_balance),
+        "description": f"Transfer of {amount} from {from_user}",
     }
 
     # Record both transactions
