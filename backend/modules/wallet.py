@@ -17,10 +17,10 @@ from backend.modules import auth, utils
 TRANSACTIONS_FILE = "backend/data/transactions.csv"
 
 # CSV column names
-CSV_COLUMNS = ["date", "type", "from_user", "to_user", "amount", "balance"]
+CSV_COLUMNS = ["date", "owner", "type", "from_user", "to_user", "amount", "balance", "description"]
 
 
-def calculate_balance(transactions: list, initial_balance: float) -> float:
+def calculate_balance(transactions: list, initial_balance: float, user: str) -> float:
     """Calculate balance from transaction history.
     Check if the transaction is a deposit or transfer and updates the
     balance accordingly.
@@ -28,6 +28,7 @@ def calculate_balance(transactions: list, initial_balance: float) -> float:
     Args:
         transactions: List of transaction dictionaries.
         initial_balance: Starting balance before transactions.
+        user: Username to calculate balance for.
 
     Returns:
         Calculated balance after all transactions.
@@ -35,15 +36,17 @@ def calculate_balance(transactions: list, initial_balance: float) -> float:
     balance = initial_balance
 
     for transaction in transactions:
-        trans_type = transaction.get("type", "")
-        amount = float(transaction.get("amount", 0))
+        # CRITICAL: Only process the record if the 'owner' is the current user
+        if transaction.get("owner") == user:
+            trans_type = transaction.get("type", "")
+            amount = float(transaction.get("amount", 0))
 
-        if trans_type == "deposit":
-            balance += amount
-        elif trans_type == "transfer_in":
-            balance += amount
-        elif trans_type == "transfer_out":
-            balance -= amount
+            # If it's a deposit or incoming transfer, add the amount
+            if trans_type in ["deposit", "transfer_in"]:
+                balance += amount
+            # If it's an outgoing transfer, subtract the amount
+            elif trans_type == "transfer_out":
+                balance -= amount
 
     return balance
 
@@ -63,16 +66,13 @@ def get_transaction_history(user: str) -> list:
     except FileNotFoundError:
         return []
 
-    user_transactions = []
-    for transaction in all_transactions:
-        from_user = transaction.get("from_user", "")
-        to_user = transaction.get("to_user", "")
-
-        if from_user == user or to_user == user:
-            user_transactions.append(transaction)
+    # Direct filter: Only bring the rows that belong to the user
+    user_transactions = [
+        transaction for transaction in all_transactions 
+        if transaction.get("owner") == user
+    ]
 
     return user_transactions
-
 
 def validate_transfer_balance(user: str, amount: float) -> bool:
     """Validate if the user has sufficient balance for making a transfer.
@@ -93,7 +93,7 @@ def validate_transfer_balance(user: str, amount: float) -> bool:
 
     initial_balance = float(user_data.get("balance", 0))
     transactions = get_transaction_history(user)
-    current_balance = calculate_balance(transactions, initial_balance)
+    current_balance = calculate_balance(transactions, initial_balance, user)
 
     return current_balance >= amount
 
@@ -155,7 +155,7 @@ def deposit(user: str, amount: float, source: str = 'external') -> dict:
     # Calculate current balance
     initial_balance = float(user_data.get("balance", 0))
     transactions = get_transaction_history(user)
-    current_balance = calculate_balance(transactions, initial_balance)
+    current_balance = calculate_balance(transactions, initial_balance, user)
 
     # Calculate new balance after deposit
     new_balance = current_balance + amount
@@ -163,11 +163,13 @@ def deposit(user: str, amount: float, source: str = 'external') -> dict:
     # Create transaction record
     transaction = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "owner": user,
         "type": "deposit",
         "from_user": source,
-        "to_user": user,
+        "to_user": user,  
         "amount": str(amount),
         "balance": str(new_balance),
+        "description": f"Deposit of {amount} from {source}",
     }
 
     # Record transaction
@@ -215,9 +217,9 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
     sender_transactions = get_transaction_history(from_user)
     receiver_transactions = get_transaction_history(to_user)
 
-    sender_current_balance = calculate_balance(sender_transactions, sender_initial)
+    sender_current_balance = calculate_balance(sender_transactions, sender_initial, from_user)
     receiver_current_balance = calculate_balance(
-        receiver_transactions, receiver_initial
+        receiver_transactions, receiver_initial, to_user
         )
 
     # Calculate new balances
@@ -230,21 +232,25 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
     # Create transfer_out transaction for sender
     transfer_out = {
         "date": timestamp,
+        "owner": from_user,
         "type": "transfer_out",
         "from_user": from_user,
         "to_user": to_user,
         "amount": str(amount),
         "balance": str(sender_new_balance),
+        "description": f"Transfer of {amount} to {to_user}",
     }
 
     # Create transfer_in transaction for receiver
     transfer_in = {
         "date": timestamp,
+        "owner": to_user,
         "type": "transfer_in",
         "from_user": from_user,
         "to_user": to_user,
         "amount": str(amount),
         "balance": str(receiver_new_balance),
+        "description": f"Transfer of {amount} from {from_user}",
     }
 
     # Record both transactions
