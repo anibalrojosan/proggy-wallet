@@ -16,9 +16,12 @@ def main():
     if validate_credentials(user_test, pass_test):
         logging.info(f'Successfully logged in as {user_test}')
         user_data = get_user(user_test)
-        user_balance = get_transaction_history(user_test)
-        current_balance = calculate_balance(user_balance, float(user_data['balance']))
-        logging.info(f'Current balance of {user_test} is: {current_balance}')
+        
+        # Get the history and calculate the real balance for THIS user
+        history_records = get_transaction_history(user_test)
+        current_balance = calculate_balance(history_records, float(user_data['balance']), user_test)
+        
+        logging.info(f'Current balance for [{user_test}]: ${current_balance}')
 
         # Simulate a deposit
         deposit(user_test, 100.0)
@@ -30,11 +33,13 @@ def main():
             logging.info(f'50$ transfer succesfully done from {user_test} to {reciever_user}.')
         except Exception as e:
             logging.error(f'Error transferring money: {e}')
-
-        history = get_transaction_history(user_test)
-        logging.info(f'{user_test} transaction history (last 10)')
-        for tx in history[-10:]:
-            print(f"{tx['date']} | {tx['amount']} | {tx['type']} | balance: {tx['balance']}")
+        
+        # Print the transaction history for the user
+        logging.info(f'Transaction history for [{user_test}] (last 10):')
+        for tx in get_transaction_history(user_test)[-10:]:
+            # Identify if the user was the sender or receiver in this line
+            role = "RECEIVED" if tx['to_user'] == user_test else "SENT"
+            print(f"{tx['date']} | {tx['amount']} | {tx['type']} ({role}) | Current Balance: {tx['balance']}")
 
     else:
         logging.error(f'Failed to login as {user_test}')
