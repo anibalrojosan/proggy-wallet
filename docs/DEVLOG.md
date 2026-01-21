@@ -100,3 +100,22 @@ Create authentication functions in `backend/modules/auth.py`
 **Current Status:** Phase1-03 complete. All acceptance criteria met. Ready to proceed with Phase1-04 (main script integration) or move to frontend sprints.
 
 ---
+
+[2026-01-21]
+
+### Phase1-04: Create main script and integrate modules - Done
+
+#### **Work Accomplished:**
+*   **Entry Point Creation**: Implemented `backend/main.py` to orchestrate communication between the `auth`, `wallet`, and `utils` modules.
+*   **Full Flow Simulation**: Achieved a complete end-to-end flow: Login → Balance Inquiry → Deposit → Transfer → History.
+*   **Structural Refactoring**: Redesigned the `transactions.csv` file by adding `owner` and `description` columns to improve data traceability.
+*   **Logic Correction**: Resolved a "double-counting" bug in balance calculations and addressed record redundancy in the transaction history.
+
+#### **Key Learnings & Insights:**
+1.  **Importance of data structure**: Maintaining a clear CSV with strategic columns like `owner` significantly helps to **simplify mathematical logic and functions**. By knowing exactly which user each record belongs to, the code becomes more declarative and less prone to interpretation errors.
+2.  **Visual debugging and auditing**: Periodically reviewing how data is physically stored in the CSV is a fundamental practice. This manual inspection helps to **identify logic bugs** (such as balance "rebounds" or duplicate records) that might go unnoticed by automated tests, allowing for quick and efficient fixes.
+3.  **Module-based execution**: Reinforced the understanding of how Python manages `sys.path`. Running the script as a module using `python -m backend.main` from the root directory ensures all absolute imports resolve correctly, maintaining architectural consistency.
+
+---
+
+**Current Status:** Phase 1-04 successfully completed. Backend is robust and ready for Frontend integration.
