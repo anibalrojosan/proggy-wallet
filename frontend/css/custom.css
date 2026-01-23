@@ -1,0 +1,27 @@
+/* Define our custom colors */
+:root {
+    --primary-color: #2ecc71; /* A soft green for finance */
+    --dark-bg: #2c3e50;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Customize the Bootstrap button */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #27ae60;
+    border-color: #27ae60;
+}
+
+/* Style for the logo */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
