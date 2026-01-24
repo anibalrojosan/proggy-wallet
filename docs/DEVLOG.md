@@ -116,6 +116,23 @@ Create authentication functions in `backend/modules/auth.py`
 2.  **Visual debugging and auditing**: Periodically reviewing how data is physically stored in the CSV is a fundamental practice. This manual inspection helps to **identify logic bugs** (such as balance "rebounds" or duplicate records) that might go unnoticed by automated tests, allowing for quick and efficient fixes.
 3.  **Module-based execution**: Reinforced the understanding of how Python manages `sys.path`. Running the script as a module using `python -m backend.main` from the root directory ensures all absolute imports resolve correctly, maintaining architectural consistency.
 
+**Current Status:** Phase 1-04 successfully completed. Backend is robust and ready for Frontend integration.
+
 ---
 
-**Current Status:** Phase 1-04 successfully completed. Backend is robust and ready for Frontend integration.
+[2026-01-23] 
+### Frontend Foundations & Login Implementation
+
+#### **Added**:
+- **Base Frontend Structure**: Created `index.html` and `css/custom.css` using **Bootstrap 5**.
+- **Branding**: Defined a custom color scheme (Finance Green `#2ecc71`) and integrated a Penguin (🐧) SVG favicon.
+- **Login View**: Implemented `login.html` with a responsive card-based design and form validation.
+- **Interactive Logic**: Created `js/login.js` using **jQuery** to handle form submission and basic field validation.
+- **Navigation Flow**: Connected the landing page "Start now" button to the login view and established a temporary redirect to `menu.html`.
+
+#### Technical Notes
+- **Bootstrap 5 Integration**: Used CDN for rapid prototyping of responsive components (Navbar, Cards, Forms).
+- **jQuery for DOM Manipulation**: Implemented `event.preventDefault()` to handle form logic on the client side before future Django integration.
+- **Mobile-First Approach**: Ensured all views are responsive, including specific UX tweaks like right-aligned menu items on mobile.
+
+**Current Status:** Phases 1-05 and 1-06 completed. Next: further improvements to the frontend, add more page for transfers, transactions, etc.
