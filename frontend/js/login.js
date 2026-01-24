@@ -19,8 +19,17 @@ $(document).ready(function() {
         // If everything is ok, hide the error and simulate success
         $errorDiv.addClass('d-none');
         
-        // For now, only redirect to the menu page
-        alert('Login successful! Redirecting...');
+        // Simulate user data
+        const userData = {
+            username: username,
+            balance: 1500.50, // Simulate balance
+            email: username.toLowerCase() + "@wallet.com"
+        };
+        
+        // Store the user data in the local storage
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+
+        alert('Welcome ' + username + '! Redirecting to the menu...');
         window.location.href = 'menu.html';
     });
 });
