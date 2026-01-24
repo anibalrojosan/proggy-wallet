@@ -1,7 +1,7 @@
 $(document).ready(function() {
     // Listen when the form is submitted
     $('#loginForm').on('submit', function(event) {
-        // Prevent the page from reloading (default behavior)
+        // Prevent the page from its default behavior of reloading
         event.preventDefault();
 
         // Get the values
@@ -11,7 +11,7 @@ $(document).ready(function() {
 
         // Basic validation
         if (username === '' || password === '') {
-            // Show the Bootstrap error message
+            // Show the Bootstrap error alert message
             $errorDiv.removeClass('d-none');
             return; // Stop the execution
         }
@@ -19,7 +19,7 @@ $(document).ready(function() {
         // If everything is ok, hide the error and simulate success
         $errorDiv.addClass('d-none');
         
-        // For now, only redirect to a menu page (we will create it later)
+        // For now, only redirect to the menu page
         alert('Login successful! Redirecting...');
         window.location.href = 'menu.html';
     });
