@@ -1,13 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Menu - Proggy Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proggy Wallet - Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
-<body class="p-5">
-    <h1>Welcome to the Main Menu! 🐧</h1>
-    <p>You have successfully logged in.</p>
-    <a href="login.html" class="btn btn-secondary">Logout</a>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Proggy Wallet</a>
+            <button class="btn btn-outline-light btn-sm" id="btnLogout">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <!-- welcome message and balance -->
+        <div class="row mb-4">
+            <div class="col-md-12 text-center">
+                <h2 id="welcomeMessage">Welcome, User!</h2>
+                <div class="card bg-white shadow-sm p-4 mt-3">
+                    <p class="text-muted mb-1">Your available balance</p>
+                    <h1 class="display-4 fw-bold text-success" id="balanceDisplay">$0.00</h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Options (Cards) -->
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm hover-card" onclick="location.href='deposit.html'" style="cursor: pointer;">
+                    <div class="card-body py-5">
+                        <i class="bi bi-cash-stack display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">Deposit</h5>
+                        <p class="card-text text-muted">Load money into your account instantly.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm hover-card" onclick="location.href='sendmoney.html'" style="cursor: pointer;">
+                    <div class="card-body py-5">
+                        <i class="bi bi-send-fill display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">Transfer</h5>
+                        <p class="card-text text-muted">Send money to other contacts of Proggy Wallet.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm hover-card" onclick="location.href='transactions.html'" style="cursor: pointer;">
+                    <div class="card-body py-5">
+                        <i class="bi bi-clock-history display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">Movements</h5>
+                        <p class="card-text text-muted">Review your income and expense history.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/menu.js"></script>
 </body>
 </html>
