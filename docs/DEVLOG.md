@@ -103,7 +103,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 [2026-01-21]
 
-### Phase1-04: Create main script and integrate modules - Done
+## Phase1-04: Create main script and integrate modules - Done
 
 #### **Work Accomplished:**
 *   **Entry Point Creation**: Implemented `backend/main.py` to orchestrate communication between the `auth`, `wallet`, and `utils` modules.
@@ -121,7 +121,7 @@ Create authentication functions in `backend/modules/auth.py`
 ---
 
 [2026-01-23] 
-### Frontend Foundations & Login Implementation
+## Frontend Foundations & Login Implementation
 
 #### **Added**:
 - **Base Frontend Structure**: Created `index.html` and `css/custom.css` using **Bootstrap 5**.
@@ -136,3 +136,89 @@ Create authentication functions in `backend/modules/auth.py`
 - **Mobile-First Approach**: Ensured all views are responsive, including specific UX tweaks like right-aligned menu items on mobile.
 
 **Current Status:** Phases 1-05 and 1-06 completed. Next: further improvements to the frontend, add more page for transfers, transactions, etc.
+
+---
+
+[2026-01-24]
+
+## Phase1-07: Dashboard Menu Implementation
+
+• **Dashboard View**: Created `menu.html` as the central hub of the application.
+  - Implemented responsive navigation cards using Bootstrap 5 for Deposit, Transfer, and Movements.
+  - Added user greeting and real-time balance display.
+
+• **Interactive Logic**: Developed `js/menu.js` to handle session verification.
+  - Added logic to redirect unauthorized users to the login page.
+  - Implemented logout functionality to clear `localStorage` session data.
+
+**Current Status**: Dashboard functional. Next: implementing specific wallet operations.
+
+---
+
+[2026-01-25]
+
+## Phase1-08 & Phase1-09: Wallet Operations (Deposits & Transfers)
+
+• **Phase1-08: Deposits View**: Implemented `deposit.html` and `js/deposit.js`.
+  - Created a simple form for loading funds with positive amount validation.
+  - Integrated jQuery animations (fadeOut/fadeIn) for visual balance updates.
+
+• **Phase1-09: Send Money View**: Developed `sendmoney.html` and `js/sendmoney.js`.
+  - Implemented a dynamic recipient selector with a mock contact list.
+  - **Overdraft Protection**: Added critical validation to prevent transfers exceeding the available balance.
+  - Added a native browser confirmation dialog before processing transactions.
+
+**Current Status**: Core wallet functionalities implemented on the frontend. Data persists in `localStorage`.
+
+---
+
+[2026-01-26]
+
+## Phase1-10: Transaction History View
+
+• **History Interface**: Created `transactions.html` featuring a professional transaction table.
+  - Implemented responsive design for mobile devices using scrollable containers.
+  - Added a button group for quick filtering (All/Income/Expenses).
+
+• **Data Management**: Developed `js/transactions.js` with advanced UI logic.
+  - **Filtering & Sorting**: Implemented dynamic array filtering and a date-based sorting toggle (ASC/DESC).
+  - **Dynamic Rendering**: Used Template Literals to inject HTML rows based on the user's transaction history.
+  - Included a "No movements" state for empty transaction lists.
+
+  **Next**: finally integrate the frontend with the backend and test the app.
+
+---
+
+[2026-01-26]
+
+## JS Concepts Review
+
+While doing tickets 07 to 10, I needed to review a lot of concepts of JS and jQuery, and how to manipulate the DOM. Some of the most important concepts were:
+
+### 1. Modern JavaScript Concepts (ES6+)
+* **Template Literals (`Backticks`):** Technique for creating dynamic HTML by mixing text and variables without using concatenation with the plus sign (+).
+* **Interpolation (`${}`):** The way to insert values inside a dynamic string.
+* **Array Methods (`.filter()`, `.sort()`, `.forEach()`):** Tools to transform, order, and iterate through data lists efficiently.
+* **Arrow Functions (`=>`):** Shorthand syntax for writing functions, widely used in filters and sorting.
+* **Ternary Operator (`Condition ? True : False`):** A way to make quick decisions in a single line of code.
+* **Object Destructuring (Pending):** An even cleaner way to extract data from objects like amounts or dates.
+
+### 2. Logic and Execution
+* **Hoisting:** JS behavior that allows defining functions at the bottom of the code and calling them from the top. This behavior it's fundamentally different to how Python reads and executes every line of code in a file.
+* **Scope and Closures:** How variables and functions share a common space within document.ready and communicate with each other. Also, this if fundamentally different to how Python works (identation)
+* **Date Handling (`new Date`):** Conversion of technical strings into date objects that can be compared or formatted.
+* **Asynchrony (Callback concept):** Understanding that the code within a click event does not execute immediately, but when the action occurs in the future.
+
+### 3. jQuery and DOM Manipulation
+* **Selectors (`$('#id')`, `$('.class')`):** How JS locates specific HTML elements to interact with them.
+* **DOM Injection (`.append()`, `.empty()`):** The process of clearing and writing new HTML content from the script.
+* **Class Management (`.addClass()`, `.removeClass()`):** To dynamically change Bootstrap's visual design.
+* **Event Handlers (`.click()`):** Creating interactivity by making the page respond to user actions.
+* **Context (`$(this)`):** A way to refer to the exact element that received the click without repeating its name or ID.
+* **Dollar sign `$` variable convention:** Using the $ symbol at the start of a variable to identify that it stores a jQuery element.
+
+### 4. Browser APIs (Web APIs)
+* **LocalStorage:** A system for saving data in the browser that persists even after refreshing the page.
+* **JSON (`.parse()` and `.stringify()`):** The format for converting complex objects into text and vice versa.
+
+---
