@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer - Proggy Wallet</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="menu.html">
+                <i class="bi bi-arrow-left"></i> Back to Menu
+            </a>
+            <span class="navbar-text text-white" id="userGreeting"></span>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-send-fill display-1 text-primary"></i>
+                            <h2 class="mt-2">Send Money</h2>
+                            <p class="text-muted">Transfer funds to your contacts instantly.</p>
+                        </div>
+
+                        <!-- Current Balance Display -->
+                        <div class="alert alert-secondary text-center" role="alert">
+                            Available Balance: <strong id="currentBalanceDisplay">$0.00</strong>
+                        </div>
+
+                        <!-- Transfer Form -->
+                        <form id="transferForm">
+                            <!-- Recipient Selection -->
+                            <div class="mb-3">
+                                <label for="recipientSelect" class="form-label">Choose a recipient</label>
+                                <select class="form-select form-select-lg" id="recipientSelect" required>
+                                    <option value="" selected disabled>Select a contact to send money to...</option>
+                                </select>
+                            </div>
+
+                            <!-- Amount Input -->
+                            <div class="mb-3">
+                                <label for="transferAmount" class="form-label">Amount to send ($)</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="transferAmount" step="0.01" placeholder="0.00" required>
+                                </div>
+                            </div>
+
+                            <!-- Success/Error Messages -->
+                            <div id="messageContainer" class="d-none alert mb-3"></div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="btnTransfer">
+                                Confirm Transfer
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/sendmoney.js"></script>
+</body>
+</html>
