@@ -93,3 +93,43 @@ async def get_wallet_status(username: str):
         'balance': current_balance,
         'history_count': len(history),
     }
+
+@app.post("/wallet/deposit")
+async def make_deposit(data: DepositRequest):
+    """Route to make a deposit for a user"""
+    try:
+        # deposit() handles the update of the CSV and the calculation of the balance
+        transaction = deposit(data.username, data.amount)
+        
+        return {
+            "status": "success",
+            "message": f"Deposit of ${data.amount} successful",
+            "transaction": transaction
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal error processing the deposit")
+
+@app.post("/wallet/transfer")
+async def make_transfer(data: TransferRequest):
+    """Route to make a transfer between two users"""
+    try:
+        # transfer() validates the insufficient balance and the existence of the users
+        transaction = transfer(data.from_user, data.to_user, data.amount)
+        
+        return {
+            "status": "success",
+            "message": f"Transfer of ${data.amount} to {data.to_user} successful",
+            "transaction": transaction
+        }
+    except FileNotFoundError as e:
+        # If one of the users does not exist
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        # If the balance is insufficient or the amount is negative
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal error processing the transfer: {str(e)}")
