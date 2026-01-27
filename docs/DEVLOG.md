@@ -187,9 +187,6 @@ Create authentication functions in `backend/modules/auth.py`
 
   **Next**: finally integrate the frontend with the backend and test the app.
 
----
-
-[2026-01-26]
 
 ## JS Concepts Review
 
@@ -220,5 +217,46 @@ While doing tickets 07 to 10, I needed to review a lot of concepts of JS and jQu
 ### 4. Browser APIs (Web APIs)
 * **LocalStorage:** A system for saving data in the browser that persists even after refreshing the page.
 * **JSON (`.parse()` and `.stringify()`):** The format for converting complex objects into text and vice versa.
+
+---
+
+[2026-01-27]
+
+## Phase1-11: Full-Stack Integration with FastAPI
+
+#### **Work Accomplished:**
+*   **Backend API Implementation**: Developed a robust REST API using **FastAPI** to replace standalone script execution.
+    *   Created `backend/app.py` as the central entry point.
+    *   Implemented **Pydantic** models (`LoginRequest`, `DepositRequest`, `TransferRequest`) for strict data validation.
+    *   Configured **CORS Middleware** to allow secure communication with the frontend.
+*   **Frontend Refactoring**: Migrated the entire frontend from `localStorage` mock data to real-time server communication.
+    *   Implemented **Fetch API** with `async/await` in all JS modules (`login.js`, `menu.js`, `deposit.js`, `sendmoney.js`, `transactions.js`).
+    *   Established a **Session Management** system using `localStorage` only for user identification, keeping financial data on the server.
+*   **Architecture Documentation**: Established a professional documentation standard for the project's evolution.
+    *   Created `docs/ARCHITECTURE.md` to outline the system's decoupled structure.
+    *   Implemented **ADRs (Architecture Decision Records)** to document the rationale behind choosing FastAPI and initial flat-file persistence. Later changes in the arquitecture while improving the app will be documented this way.
+
+#### **Key Learnings & Concepts Review:**
+
+While doing issue #11, I had to investigate and learn a lot of topics of web dev and how to communicate the  Frontend and Backend of the app. Some of those topics were:
+
+### 1. Modern Backend Architecture (FastAPI)
+*   **ASGI & Uvicorn**: Understanding the asynchronous server standard that allows high-performance Python web apps.
+*   **API Contracts**: Designing endpoints with semantic HTTP methods (`GET` for retrieval, `POST` for actions/creation, `PUT` for updates, `DELETE` for deletions).
+*   **Pydantic Validation**: Leveraging "Fail Fast" principles where the server rejects invalid data (e.g., negative amounts) automatically before processing.
+*   **HTTP Exceptions**: Using standard status codes (401 Unauthorized, 404 Not Found, 422 Validation Error) to communicate with the client.
+
+### 2. Frontend Integration
+*   **Asynchronous JavaScript**: Mastering `async/await` to handle server latency without freezing the UI.
+*   **Fetch API & Headers**: Using `Content-Type: application/json` to ensure the frontend and backend speak the same language.
+*   **Single Source of Truth**: Shifting the authority of data from the browser's `localStorage` to the server's CSV/JSON files.
+*   **Defensive Programming**: Implementing `parseFloat()` and `.get()` to handle data type conversions between CSV strings and JavaScript numbers. This is a good practice to avoid errors and unexpected behavior. `.get()` is a good way to handle the case where the data is not found.
+
+### 3. Engineering Best Practices
+*   **CORS Security**: Understanding why browsers block cross-origin requests and how to safely enable them during development.
+*   **Living Documentation**: The importance of documenting the "Why" (ADRs) and the "How" (Architecture) while the code is still fresh.
+*   **Decoupled Design**: Realizing that the Frontend is just a "viewer" while the Backend is the "brain and memory" of the system. it's important to keep the frontend and backend separated to make the app more maintainable and scalable.
+
+**Current Status:** Phase1-11 successfully completed. The application is now a fully functional Full-Stack system. Next step: add unit tests for critical functions and update documentation.
 
 ---
