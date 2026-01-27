@@ -1,6 +1,6 @@
 $(document).ready(async function() {
     // Try to get the user from the local storage
-    const username = JSON.parse(localStorage.getItem('currentUser'));
+    const username = localStorage.getItem('currentUser');
 
     // Security: If there is no user, send him back to the login
     if (!username) {

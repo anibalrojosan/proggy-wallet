@@ -32,7 +32,7 @@ $(document).ready(async function() {
         const $select = $('#recipientSelect');
         contacts.forEach(contact => {
             // Don't show the current user in the contact list
-            if (contact.username !== currentUser.username) {
+            if (contact.username !== username) {
                 $select.append(`<option value="${contact.username}">${contact.name} (@${contact.username})</option>`);
             }
         });

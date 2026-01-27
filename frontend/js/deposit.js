@@ -2,7 +2,7 @@ $(document).ready(async function() {
     // 1. Try to get the user from the local storage
     const username = localStorage.getItem('currentUser');
 
-    if (!currentUser) {
+    if (!username) {
         window.location.href = 'login.html';
         return;
     }
