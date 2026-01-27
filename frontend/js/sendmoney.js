@@ -1,26 +1,31 @@
-$(document).ready(function() {
+$(document).ready(async function() {
     // 1. Try to get the user from the local storage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!currentUser) {
+    const username = localStorage.getItem('currentUser');
+    
+    if (!username) {
         window.location.href = 'login.html';
         return;
     }
 
-    // 2. Mock data for contacts
+    // 2. Initialize interface
+    $('#userGreeting').text(`Hello, ${username}`);
+    await refreshBalance();
+
+    // Later, we will get the contacts from the backend
     const contacts = [
-        { username: 'maria_perez', name: 'Maria Perez' },
-        { username: 'juan_gomez', name: 'Juan Gomez' },
-        { username: 'lucia_suarez', name: 'Lucia Suarez' },
+        { username: 'user2', name: 'User 2' },
         { username: 'admin', name: 'System Admin' }
     ];
-
-    // 3. Initialize interface
-    $('#userGreeting').text(`Hello, ${currentUser.username}`);
-    updateBalanceDisplay(currentUser.balance);
     loadContacts();
 
-    function updateBalanceDisplay(amount) {
-        $('#currentBalanceDisplay').text(`$${parseFloat(amount).toFixed(2)}`);
+    async function refreshBalance() {
+        const response = await fetch(`http://localhost:8000/wallet/status/${username}`);
+        const data = await response.json();
+        if (response.ok) {
+            $('#currentBalanceDisplay').text(`$${data.balance.toFixed(2)}`);
+            return data.balance;
+        }
+        return 0;
     }
 
     function loadContacts() {
@@ -33,54 +38,54 @@ $(document).ready(function() {
         });
     }
 
-    // 4. Handle the transfer form
-    $('#transferForm').submit(function(e) {
+    // 3. Handle the transfer form
+    $('#transferForm').submit(async function(e) {
         e.preventDefault();
 
         const amount = parseFloat($('#transferAmount').val());
         const recipient = $('#recipientSelect').val();
         
-        // Validations
-        if (!recipient) {
-            showMessage("Please select a recipient.", "alert-danger");
+        if (!recipient || isNaN(amount) || amount <= 0) {
+            showMessage("Please fill all fields correctly.", "alert-danger");
             return;
         }
 
-        if (isNaN(amount) || amount <= 0) {
-            showMessage("Please enter a valid positive amount.", "alert-danger");
-            return;
+        if (!confirm(`Send $${amount.toFixed(2)} to ${recipient}?`)) return;
+
+        try {
+            // Call to the backend
+            const response = await fetch('http://localhost:8000/wallet/transfer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    from_user: username, 
+                    to_user: recipient, 
+                    amount: amount 
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage(`Successfully sent $${amount.toFixed(2)}!`, "alert-success");
+                
+                // Update the balance with the real data that the transfer returns
+                // transaction.balance is the new balance after the transfer (.transfer() returns transfer_out (transactions of sender))
+                $('#currentBalanceDisplay').fadeOut(200, function() {
+                    $(this).text(`$${parseFloat(result.transaction.balance).toFixed(2)}`).fadeIn(200);
+                });
+                $('#transferAmount').val('');
+                $('#recipientSelect').val('');
+            } else {
+                // Here we capture the error of "Insufficient balance" that we sent from the backend
+                showMessage(result.detail || "Transfer failed", "alert-danger");
+            }
+        } catch (error) {
+            showMessage("Connection error", "alert-danger");
         }
-
-        // Critical validation: Enough balance
-        if (amount > currentUser.balance) {
-            showMessage("Insufficient funds. Please enter a lower amount.", "alert-danger");
-            return;
-        }
-
-        // Confirmation before sending (show a modal with the confirmation)
-        if (!confirm(`Are you sure you want to send $${amount.toFixed(2)} to ${recipient}?`)) {
-            return;
-        }
-
-        // Process transfer (Simulated)
-        currentUser.balance -= amount;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-        // Show success message
-        showMessage(`Successfully sent $${amount.toFixed(2)} to ${recipient}!`, "alert-success");
-        
-        // Update balance with animation
-        $('#currentBalanceDisplay').fadeOut(200, function() {
-            updateBalanceDisplay(currentUser.balance);
-            $(this).fadeIn(200);
-        });
-
-        // Clear form inputs
-        $('#transferAmount').val('');
-        $('#recipientSelect').val('');
     });
 
-    // Reusable function for messages (same as in deposit.js)
+    // Show messages (same function as in deposit.js)
     function showMessage(text, className) {
         const $message = $('#messageContainer');
         $message.text(text)
