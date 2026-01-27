@@ -133,3 +133,18 @@ async def make_transfer(data: TransferRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal error processing the transfer: {str(e)}")
+
+@app.get("/wallet/history/{username}")
+async def get_history(username: str):
+    """Route to get the real history of transactions from the CSV file"""
+    try:
+        # get the history of transactions from the CSV file
+        history = get_transaction_history(username)
+        
+        return {
+            "status": "success",
+            "username": username,
+            "transactions": history
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting the history: {str(e)}")

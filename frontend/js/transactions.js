@@ -1,27 +1,30 @@
-$(document).ready(function() {
-    // 1. Try to get the user from the local storage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!currentUser) {
+$(document).ready(async function() {
+    // 1. Get the username from the local storage
+    const username = localStorage.getItem('currentUser');
+    if (!username) {
         window.location.href = 'login.html';
         return;
     }
 
-    // 2. Load transactions (or use example data if empty)
-    let transactions = JSON.parse(localStorage.getItem(`transactions_${currentUser.username}`)) || [];
-
-    // If there are no data, add some example data for testing
-    if (transactions.length === 0) {
-        transactions = [
-            { date: '2023-10-25T14:30:00Z', type: 'deposit', counterparty: 'Initial Deposit', amount: 1000.0, balance: 1000.0 },
-            { date: '2023-10-26T10:15:00Z', type: 'transfer_out', counterparty: 'maria_perez', amount: 50.0, balance: 950.0 },
-            { date: '2023-10-27T12:00:00Z', type: 'transfer_in', counterparty: 'juan_gomez', amount: 20.0, balance: 970.0 }
-        ];
-        // Save the example data for persistence
-        localStorage.setItem(`transactions_${currentUser.username}`, JSON.stringify(transactions));
-    }
-
+    let transactions = [];
     let currentFilter = 'all';
     let sortOrder = 'desc'; // Descending by date by default
+
+    // 2. Function to load data from the backend
+    async function loadTransactions() {
+        try {
+            const response = await fetch(`http://localhost:8000/wallet/history/${username}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                transactions = data.transactions;
+                renderTable(); // Render the table after receiving the data
+            }
+        } catch (error) {
+            console.error("Error loading history:", error);
+            $('#noTransactions').text("Error connecting to server").removeClass('d-none');
+        }
+    }
 
     // 3. Function to render the table
     function renderTable() {
@@ -52,6 +55,9 @@ $(document).ready(function() {
                 const typeClass = (t.type === 'transfer_out') ? 'text-danger' : 'text-success';
                 const typeIcon = (t.type === 'transfer_out') ? 'bi-arrow-up-right' : 'bi-arrow-down-left';
                 const typeText = t.type === 'deposit' ? 'Deposit' : (t.type === 'transfer_out' ? 'Transfer Out' : 'Transfer In');
+
+                // Get the counterparty (the user that is receiving or sending money)
+                const counterparty = (t.type === 'transfer_out') ? t.to_user : t.from_user;
 
                 // DOM insertion (append a new row to the table)
                 $body.append(`
@@ -96,5 +102,5 @@ $(document).ready(function() {
     });
 
     // Initial load
-    renderTable();
+    await loadTransactions();
 });
