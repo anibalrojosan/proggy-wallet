@@ -260,3 +260,42 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 **Current Status:** Phase1-11 successfully completed. The application is now a fully functional Full-Stack system. Next step: add unit tests for critical functions and update documentation.
 
 ---
+
+[2026-01-30]
+
+## Phase1-12: Quality Assurance & Unit Testing (Part 1)
+
+• **Testing Infrastructure**: Configured `pytest` as the primary testing framework.
+  - Implemented the first set of unit tests for `backend/modules/utils.py` focusing on amount validation.
+
+• **Authentication Testing**: Developed a comprehensive test suite for `auth.py`.
+  - Leveraged `pytest.fixture` and `monkeypatch` to simulate user data without relying on physical JSON files.
+  - Covered scenarios: successful login, incorrect password, and non-existent users.
+
+**Current Status**: Backend core (Utils & Auth) protected by tests. Ready to proceed with the Wallet module.
+
+---
+
+[2026-01-31]
+
+## Phase1-12: Wallet Testing & Project Finalization (Phase 1 Done)
+
+• **Wallet Module Robustness**: Completed the test suite for `backend/modules/wallet.py`.
+  - **Logic Testing**: Implemented `TestCalculateBalance` to verify mathematical accuracy across multiple transaction types.
+  - **Security Testing**: Created `TestTransfer` with edge case coverage (insufficient balance, negative amounts, invalid users).
+  - **Persistence Testing**: Added tests for `deposit` and `get_transaction_history` using mocked environments to ensure data integrity.
+
+• **Code Quality & Standards**:
+  - Ran `Ruff` for project-wide linting and formatting.
+  - Adjusted `line-length` to 110 in `pyproject.toml` to better accommodate descriptive docstrings and complex logic.
+  - Achieved zero linting errors across the entire backend.
+
+• **Documentation & UX**:
+  - Refactored `README.md` into a professional technical guide.Included a Quick Start guide, installation instructions with `uv`, and a detailed project structure overview.
+  - Added clear commands for running the CLI simulation, the FastAPI server, and the test suite.
+
+**Current Status**: Phase 1 officially completed. The project has a robust, tested, and well-documented foundation. 
+
+**Next Step**: Transition to Phase 2 (Architecture & Robustness), starting with **Class Diagrams** and **ERD design** for OOP refactoring and PostgreSQL integration.
+
+---
