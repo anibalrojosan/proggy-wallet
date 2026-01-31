@@ -81,3 +81,92 @@ class TestTransfer:
 
         with pytest.raises(FileNotFoundError, match="not found"):
             wallet.transfer("sender", "receiver", 100.0)
+
+class TestDeposit:
+    '''Test the deposit function'''
+
+    def test_deposit_success(self, monkeypatch):
+        '''Test that a valid deposit calculates the balance correctly'''
+        # Mock a user with an initial balance of 100
+        monkeypatch.setattr("backend.modules.auth.get_user", 
+                            lambda user: {"username": user, "balance": "100.0"})
+        # Mock an empty transaction history for this test
+        monkeypatch.setattr(wallet, "get_transaction_history", lambda user: [])
+        # Mock that we don't try to write to the CSV
+        monkeypatch.setattr(wallet, "record_transaction", lambda tx: None)
+
+        result = wallet.deposit("user1", 50.0, source="atm")
+
+        assert result["type"] == "deposit"
+        assert result["to_user"] == "user1"
+        assert float(result["amount"]) == 50.0
+        assert float(result["balance"]) == 150.0  # 100 + 50
+        assert "atm" in result["description"]
+
+    def test_deposit_negative_amount(self):
+        '''Test that it fails if the amount is negative'''
+        with pytest.raises(ValueError, match="amount must be positive"):
+            wallet.deposit("user1", -10.0)
+
+    def test_deposit_user_not_found(self, monkeypatch):
+        '''Test that it fails if the user does not exist'''
+        monkeypatch.setattr("backend.modules.auth.get_user", lambda user: None)
+        
+        with pytest.raises(FileNotFoundError, match="User not found"):
+            wallet.deposit("ghost_user", 100.0)
+
+
+class TestTransactionHistory:
+    '''Test the transaction history function'''
+
+    def test_get_history_filters_by_owner(self, monkeypatch):
+        '''Test that it only returns the transactions of the requested user'''
+        mock_data = [
+            {"owner": "user1", "type": "deposit", "amount": "100"},
+            {"owner": "user2", "type": "deposit", "amount": "200"},
+            {"owner": "user1", "type": "transfer_out", "amount": "50"}
+        ]
+        # Mock the reading of the CSV file
+        monkeypatch.setattr("backend.modules.utils.read_csv_file", lambda path: mock_data)
+
+        history = wallet.get_transaction_history("user1")
+
+        assert len(history) == 2
+        for tx in history:
+            assert tx["owner"] == "user1"
+
+    def test_get_history_file_not_found(self, monkeypatch):
+        '''Test that it returns an empty list if the CSV file does not exist yet'''
+        def mock_read_error(path):
+            raise FileNotFoundError()
+            
+        monkeypatch.setattr("backend.modules.utils.read_csv_file", mock_read_error)
+
+        history = wallet.get_transaction_history("any_user")
+        assert history == []
+
+    def test_get_history_empty_list_if_no_matches(self, monkeypatch):
+        '''Test that it returns an empty list if the user has no transactions in the file'''
+        mock_data = [
+            {"owner": "user2", "type": "deposit", "amount": "100"},
+            {"owner": "user3", "type": "transfer_in", "amount": "50"}
+        ]
+        monkeypatch.setattr("backend.modules.utils.read_csv_file", lambda path: mock_data)
+
+        # Search for user1, which is not in the mocked data
+        history = wallet.get_transaction_history("user1")
+        
+        assert history == []
+        assert len(history) == 0
+
+    def test_get_history_integrity(self, monkeypatch):
+        '''Test that the returned data maintains its original structure'''
+        mock_tx = {"owner": "user1", "type": "deposit", "amount": "100.0", "date": "2026-01-01"}
+        monkeypatch.setattr("backend.modules.utils.read_csv_file", lambda path: [mock_tx])
+
+        history = wallet.get_transaction_history("user1")
+        
+        assert history[0]["amount"] == "100.0"
+        assert history[0]["type"] == "deposit"
+        assert "date" in history[0]
+    
