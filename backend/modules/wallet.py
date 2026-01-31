@@ -68,11 +68,11 @@ def get_transaction_history(user: str) -> list:
 
     # Direct filter: Only bring the rows that belong to the user
     user_transactions = [
-        transaction for transaction in all_transactions 
-        if transaction.get("owner") == user
+        transaction for transaction in all_transactions if transaction.get("owner") == user
     ]
 
     return user_transactions
+
 
 def validate_transfer_balance(user: str, amount: float) -> bool:
     """Validate if the user has sufficient balance for making a transfer.
@@ -127,7 +127,7 @@ def record_transaction(transaction_data: dict) -> None:
     utils.write_csv_file(TRANSACTIONS_FILE, all_transactions)
 
 
-def deposit(user: str, amount: float, source: str = 'external') -> dict:
+def deposit(user: str, amount: float, source: str = "external") -> dict:
     """Process deposit transaction.
     Deposit: money that comes from an EXTERNAL SOURCE, like a bank transfer or a
     cash deposit.
@@ -166,7 +166,7 @@ def deposit(user: str, amount: float, source: str = 'external') -> dict:
         "owner": user,
         "type": "deposit",
         "from_user": source,
-        "to_user": user,  
+        "to_user": user,
         "amount": str(amount),
         "balance": str(new_balance),
         "description": f"Deposit of {amount} from {source}",
@@ -218,9 +218,7 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
     receiver_transactions = get_transaction_history(to_user)
 
     sender_current_balance = calculate_balance(sender_transactions, sender_initial, from_user)
-    receiver_current_balance = calculate_balance(
-        receiver_transactions, receiver_initial, to_user
-        )
+    receiver_current_balance = calculate_balance(receiver_transactions, receiver_initial, to_user)
 
     # Calculate new balances
     sender_new_balance = sender_current_balance - amount
