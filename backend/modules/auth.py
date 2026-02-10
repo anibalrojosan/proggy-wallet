@@ -1,6 +1,7 @@
 """User authentication module for credential validation and user management."""
 
 from backend.modules import utils
+from backend.modules.models import User
 
 # Path to users JSON file
 USERS_FILE = "backend/data/users.json"
@@ -22,20 +23,21 @@ def load_users() -> list[dict]:
         return []
 
 
-def get_user(username: str) -> dict | None:
+def get_user(username: str) -> User | None:
     """Get user data by username.
 
     Args:
         username: The username to search for.
 
     Returns:
-        User dictionary if found, None otherwise.
+        User object if found, None otherwise.
     """
     users = load_users()
 
-    for user in users:
-        if user.get("username") == username:
-            return user
+    for user_dict in users:
+        if user_dict.get("username") == username:
+            # Pydantic validates the dictionary and converts it to a User object
+            return User(**user_dict)
 
     return None
 
@@ -50,9 +52,11 @@ def validate_credentials(username: str, password: str) -> bool:
     Returns:
         True if credentials are valid, False otherwise.
     """
-    user = get_user(username)
+    # We need to load raw data for validation because our User model
+    # doesn't include the password field for security.
+    users = load_users()
+    for user_dict in users:
+        if user_dict.get("username") == username:
+            return user_dict.get("password") == password
 
-    if user is None:
-        return False
-
-    return user.get("password") == password
+    return False

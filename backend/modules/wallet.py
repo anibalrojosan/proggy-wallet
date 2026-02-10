@@ -12,6 +12,7 @@ This modules contains the following functions:
 from datetime import datetime
 
 from backend.modules import auth, utils
+from backend.modules.models import Transaction
 
 # Path to transactions CSV file
 TRANSACTIONS_FILE = "backend/data/transactions.csv"
@@ -103,16 +104,14 @@ def record_transaction(transaction_data: dict) -> None:
 
     Args:
         transaction_data: Dictionary with transaction details.
-                          Must contain keys matching CSV_COLUMNS.
+                          Must contain keys matching Transaction model.
 
     Raises:
-        ValueError: If transaction_data doesn't have required fields.
+        ValidationError: If transaction_data doesn't match the Transaction model.
         OSError: If file cannot be written.
     """
-    # Ensure all required fields are present
-    for column in CSV_COLUMNS:
-        if column not in transaction_data:
-            raise ValueError(f"Transaction data missing required field: {column}")
+    # Pydantic automatically validates all fields and types
+    transaction = Transaction(**transaction_data)
 
     # Read existing transactions or start with empty list
     try:
@@ -120,8 +119,8 @@ def record_transaction(transaction_data: dict) -> None:
     except FileNotFoundError:
         all_transactions = []
 
-    # Add new transaction
-    all_transactions.append(transaction_data)
+    # Add new transaction using model_dump to convert Pydantic object to dict
+    all_transactions.append(transaction.model_dump())
 
     # Write back to CSV
     utils.write_csv_file(TRANSACTIONS_FILE, all_transactions)
