@@ -84,9 +84,9 @@ async def login(credentials: LoginRequest):
         "message": f"Login successful for user: {credentials.username}",
         "status": "success",
         "user": {
-            "username": user_data["username"],
-            "email": user_data.get("email"),
-            "balance": user_data.get("balance"),
+            "username": user_data.username,
+            "email": user_data.email,
+            "balance": user_data.balance,
         },
     }
 
@@ -99,7 +99,7 @@ async def get_wallet_status(username: str):
         raise HTTPException(status_code=404, detail="User not found")
 
     history = get_transaction_history(username)
-    current_balance = calculate_balance(history, float(user_data["balance"]), username)
+    current_balance = calculate_balance(history, float(user_data.balance), username)
 
     return {
         "status": "success",

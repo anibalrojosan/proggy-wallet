@@ -1,7 +1,8 @@
 """User authentication module for credential validation and user management."""
 
 from backend.modules import utils
-from backend.modules.models import User
+from backend.modules.entities import User
+from backend.modules.models import User as UserModel
 
 # Path to users JSON file
 USERS_FILE = "backend/data/users.json"
@@ -23,27 +24,27 @@ def load_users() -> list[dict]:
         return []
 
 
-def get_user(username: str) -> User | None:
+def get_user(username: str) -> UserModel | None:
     """Get user data by username.
 
     Args:
         username: The username to search for.
 
     Returns:
-        User object if found, None otherwise.
+        User model object if found, None otherwise.
     """
     users = load_users()
 
     for user_dict in users:
         if user_dict.get("username") == username:
-            # Pydantic validates the dictionary and converts it to a User object
-            return User(**user_dict)
+            # Pydantic validates the dictionary and converts it to a User model
+            return UserModel(**user_dict)
 
     return None
 
 
 def validate_credentials(username: str, password: str) -> bool:
-    """Validate login credentials.
+    """Validate login credentials using the User entity logic.
 
     Args:
         username: The username to validate.
@@ -52,11 +53,16 @@ def validate_credentials(username: str, password: str) -> bool:
     Returns:
         True if credentials are valid, False otherwise.
     """
-    # We need to load raw data for validation because our User model
-    # doesn't include the password field for security.
-    users = load_users()
-    for user_dict in users:
+    users_data = load_users()
+    for user_dict in users_data:
         if user_dict.get("username") == username:
-            return user_dict.get("password") == password
+            # Create a User entity to use its check_password logic (hashing)
+            user_entity = User(
+                username=user_dict["username"],
+                email=user_dict["email"],
+                hashed_password=user_dict["password"],
+                balance=float(user_dict.get("balance", 0.0))
+            )
+            return user_entity.check_password(password)
 
     return False

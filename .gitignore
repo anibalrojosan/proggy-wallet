@@ -27,5 +27,7 @@ backend/data/*.csv
 backend/data/*.json
 !backend/data/.gitkeep
 
+# Scripts and extra files
+migrate_passwords.py
 github_projects.md
 improvements.md
