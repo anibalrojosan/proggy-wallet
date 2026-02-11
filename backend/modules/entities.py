@@ -1,6 +1,12 @@
-"""Domain entities for the Proggy Wallet system."""
+"""
+The entities contains the business logic for the system. They are
+Python classes that represent 'real' concepts (e.g. User, Account).
+"""
 
 import bcrypt
+
+from backend.modules.models import UserInDB
+
 
 class Account:
     """
@@ -23,7 +29,7 @@ class Account:
         """
         if amount <= 0:
             raise ValueError("Deposit amount must be positive")
-        
+
         self._balance += amount
         return self._balance
 
@@ -34,10 +40,10 @@ class Account:
         """
         if amount <= 0:
             raise ValueError("Withdrawal amount must be positive")
-        
+
         if amount > self._balance:
             raise ValueError(f"Insufficient funds. Current balance: {self._balance}")
-        
+
         self._balance -= amount
         return self._balance
 
@@ -48,15 +54,17 @@ class Account:
 class User:
     """
     Represents a user in the system.
+    Uses the UserInDB model to initialize the user.
     Handles identity and owns an Account entity.
     """
-    def __init__(self, username: str, email: str, hashed_password: str, balance: float = 0.0):
-        self.username = username
-        self.email = email
-        self.hashed_password = hashed_password
-        
+    def __init__(self, model: UserInDB):
+        self.username = model.username
+        self.email = model.email
+        # The DB model has 'password' which contains the hash
+        self.hashed_password = model.password
+
         # Automatically creates an 'Account' entity for the user.
-        self.account = Account(owner_username=username, balance=balance)
+        self.account = Account(owner_username=model.username, balance=model.balance)
 
     def check_password(self, password: str) -> bool:
         """
@@ -65,7 +73,7 @@ class User:
         """
         try:
             return bcrypt.checkpw(
-                password.encode('utf-8'), 
+                password.encode('utf-8'),
                 self.hashed_password.encode('utf-8')
             )
         except Exception:
@@ -74,7 +82,7 @@ class User:
     @staticmethod
     def hash_password(password: str) -> str:
         """Utility method to hash the password using bcrypt."""
-        return bcrypt.hash(password)
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     def update_email(self, new_email: str):
         """Updates the user's email address."""

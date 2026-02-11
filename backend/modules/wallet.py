@@ -1,9 +1,11 @@
 """
-Wallet transactions module for deposits, transfers, and transaction history.
+Wallet transactions service for deposits, transfers, and transaction history.
+
+It orchestrates the use of the entities to perform the operations (like transactions).
+
 This modules contains the following functions:
 - calculate_balance
 - get_transaction_history
-- validate_transfer_balance
 - record_transaction
 - deposit
 - transfer
@@ -11,7 +13,8 @@ This modules contains the following functions:
 
 from datetime import datetime
 
-from backend.modules import auth, utils
+from backend.modules import utils
+from backend.modules.auth import AuthService
 from backend.modules.entities import Account
 from backend.modules.models import Transaction
 
@@ -127,13 +130,14 @@ def deposit(user: str, amount: float, source: str = "external") -> dict:
         ValueError: If amount is not positive.
         FileNotFoundError: If user doesn't exist.
     """
-    user_data = auth.get_user(user)
-    if user_data is None:
+    user_entity = AuthService.get_user_entity(user)
+    if user_entity is None:
         raise FileNotFoundError(f"User not found: {user}")
 
     # Load current balance from history
     history = get_transaction_history(user)
-    current_balance = calculate_balance(history, float(user_data.balance), user)
+    # Access balance through the account entity (which holds initial balance from model)
+    current_balance = calculate_balance(history, user_entity.account.balance, user)
 
     # Use Account entity for business logic
     account = Account(owner_username=user, balance=current_balance)
@@ -174,22 +178,22 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
         FileNotFoundError: If users don't exist.
     """
     # Validate both users exist
-    sender_data = auth.get_user(from_user)
-    receiver_data = auth.get_user(to_user)
+    sender_entity = AuthService.get_user_entity(from_user)
+    receiver_entity = AuthService.get_user_entity(to_user)
 
-    if sender_data is None:
+    if sender_entity is None:
         raise FileNotFoundError(f"Sender user not found: {from_user}")
-    if receiver_data is None:
+    if receiver_entity is None:
         raise FileNotFoundError(f"Receiver user not found: {to_user}")
 
     # Load and instantiate sender account
     sender_history = get_transaction_history(from_user)
-    sender_current = calculate_balance(sender_history, float(sender_data.balance), from_user)
+    sender_current = calculate_balance(sender_history, sender_entity.account.balance, from_user)
     sender_account = Account(owner_username=from_user, balance=sender_current)
 
     # Load and instantiate receiver account
     receiver_history = get_transaction_history(to_user)
-    receiver_current = calculate_balance(receiver_history, float(receiver_data.balance), to_user)
+    receiver_current = calculate_balance(receiver_history, receiver_entity.account.balance, to_user)
     receiver_account = Account(owner_username=to_user, balance=receiver_current)
 
     # Execute business logic (validations happen inside entities)

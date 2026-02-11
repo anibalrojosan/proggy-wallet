@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from backend.modules.auth import get_user, validate_credentials
+from backend.modules.auth import AuthService
 from backend.modules.wallet import (
     calculate_balance,
     deposit,
@@ -71,22 +71,19 @@ async def health_check():
 @app.post("/auth/login")
 async def login(credentials: LoginRequest):
     """Route to validate user credentials"""
-    is_valid = validate_credentials(credentials.username, credentials.password)
+    # Usamos el nuevo servicio
+    user_entity = AuthService.authenticate(credentials.username, credentials.password)
 
-    if not is_valid:
-        # Use an HTTP status code 401 (Unauthorized) to indicate that the credentials are invalid
+    if not user_entity:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    # If the credentials are valid, get the user data
-    user_data = get_user(credentials.username)
 
     return {
         "message": f"Login successful for user: {credentials.username}",
         "status": "success",
         "user": {
-            "username": user_data.username,
-            "email": user_data.email,
-            "balance": user_data.balance,
+            "username": user_entity.username,
+            "email": user_entity.email,
+            "balance": user_entity.account.balance, # Acceso a través de la entidad
         },
     }
 
@@ -94,12 +91,12 @@ async def login(credentials: LoginRequest):
 @app.get("/wallet/status/{username}")
 async def get_wallet_status(username: str):
     """Route to get the wallet status for a user"""
-    user_data = get_user(username)
-    if not user_data:
+    user_entity = AuthService.get_user_entity(username)
+    if not user_entity:
         raise HTTPException(status_code=404, detail="User not found")
 
     history = get_transaction_history(username)
-    current_balance = calculate_balance(history, float(user_data.balance), username)
+    current_balance = calculate_balance(history, user_entity.account.balance, username)
 
     return {
         "status": "success",

@@ -361,8 +361,29 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 
 #### **Key Learnings & Insights:**
 1.  **The Hidden Cost of `extra: "allow"`**: While flexible, allowing extra fields in Pydantic models can hide data integrity issues that only surface during persistence (like writing to a strict CSV). Now I opted to set `"extra": "forbid"` so Pydantic will raise an error if a field is not in the model.
-2.  **Strict CSV Contracts**: The Python `csv` module is very sensitive to dictionary keys. When refactoring towards OOP/Pydantic, it's crucial to ensure that the "dumped" dictionaries don't contain metadata fields that aren't present in the storage file.
+2.  **Strict CSV Contracts**: The Python `csv` module is very sensitive to dictionary keys. When refactoring towards OOP/Pydantic, it's crucial to ensure that the "dumped" dictionaries don't contain metadata fields that aren't present in the storage file. This sensitivity is due to the behavior of `csv.DictWriter` (it creates a 'contract'), which raises a `ValueError` if a field is not in the headers.
 3.  **Frontend Debugging**: Encountered an issue where the browser would refresh too quickly to read error messages. 
     *   *Pro-tip*: Using "Preserve Log" in DevTools is essential when debugging forms that trigger page reloads.
 
-**Current Status:** Wallet operations are fully functional again. The system now correctly leverages OOP entities while maintaining stable data persistence. **Next:** Implement the `TransactionManager` service to further decouple persistence from business logic.
+## Phase 2: Layered Architecture Refactor & Critical Bug Fixes
+
+#### **Task 6: Backend Layered Architecture Implementation**
+*   **Data Layer Refinement**: Introduced `UserInDB` in `models.py` to strictly separate persistence data (including password hashes) from public user profiles.
+*   **Service Layer Upgrade**: Refactored `AuthService` in `auth.py` to handle the transition from raw JSON dictionaries to Pydantic models and Domain Entities.
+*   **Domain Logic Consolidation**: Updated `entities.py` to ensure the `User` entity correctly maps password hashes from the database model, enabling secure authentication.
+
+#### **Task 7: System-Wide Bug Resolution**
+*   **App Balance Fix**: Resolved a critical UI bug where the balance displayed "Error loading balance". Fixed the `app.get("/wallet/status/{username}")` endpoint to correctly access the `Account` entity within the `User` object.
+*   **Deposit & Transfer Restoration**: Fixed a `500 Internal Server Error` in wallet operations caused by legacy calls to non-existent functions. Replaced all procedural calls with the new `AuthService.get_user_entity()` pattern.
+*   **JSON Parsing Fix**: Corrected a data structure mismatch in `AuthService._load_users_data()` that was preventing the system from iterating over the user list correctly.
+
+#### **Task 8: Architecture Documentation**
+*   **Internal Design Standards**: Updated `docs/ARCHITECTURE.md` to include a detailed map of the new layered architecture (API -> Orchestration -> Persistence -> Domain).
+*   **Error Handling Policy**: Documented a standardized exception propagation strategy to ensure technical errors are gracefully converted into meaningful HTTP responses for the frontend.
+
+#### **Key Learnings & Insights:**
+1.  **Decoupling for Stability**: This refactor proved that decoupling the "how" (JSON storage) from the "what" (Business Rules) makes the system much easier to debug. Once the `AuthService` was fixed, multiple bugs across the app were resolved simultaneously.
+2.  **The Role of DTOs**: Using `UserInDB` as a specific model for database operations prevented security leaks and made the code more declarative. It acts as a "security gate" between the raw storage and the application logic.
+3.  **Layered Error Propagation**: Moving from generic `except Exception` blocks to specific error catching (e.g., `ValueError` for business rules, `FileNotFoundError` for data) significantly improved the API's reliability and the quality of frontend feedback.
+
+**Current Status:** The system is now fully stable under the new layered architecture. All core features (Login, Balance, Deposits, Transfers, History) are operational. **Next:** Proceed to Sprint 15.
