@@ -23,7 +23,7 @@ class User(UserBase):
 class TransactionBase(BaseModel):
     """Base structure of a transaction."""
     amount: float = Field(..., gt=0)
-    description: str = Field(..., min_length=1, max_length=100)
+    description: str | None = Field(None, max_length=100)
     type: Literal["deposit", "transfer_in", "transfer_out"]
 
 class TransactionCreate(TransactionBase):
@@ -35,6 +35,9 @@ class TransactionCreate(TransactionBase):
 class Transaction(TransactionCreate):
     """Complete transaction with system-generated metadata.
     If a date is not provided, the system will generate the current date and time."""
-    id: int | None = Field(None, description="Unique identifier for the transaction")
     date: datetime = Field(default_factory=datetime.now)
-    balance_after: float
+    balance: float
+
+    model_config = {
+        "extra": "forbid"  # Forbidden extra fields
+    }

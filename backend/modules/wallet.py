@@ -12,6 +12,7 @@ This modules contains the following functions:
 from datetime import datetime
 
 from backend.modules import auth, utils
+from backend.modules.entities import Account
 from backend.modules.models import Transaction
 
 # Path to transactions CSV file
@@ -75,30 +76,6 @@ def get_transaction_history(user: str) -> list:
     return user_transactions
 
 
-def validate_transfer_balance(user: str, amount: float) -> bool:
-    """Validate if the user has sufficient balance for making a transfer.
-
-    Args:
-        user: Username to check balance for.
-        amount: Amount to transfer.
-
-    Returns:
-        True if user has sufficient balance, False otherwise.
-    """
-    if not utils.validate_amount(amount):
-        return False
-
-    user_data = auth.get_user(user)
-    if user_data is None:
-        return False
-
-    initial_balance = float(user_data.get("balance", 0))
-    transactions = get_transaction_history(user)
-    current_balance = calculate_balance(transactions, initial_balance, user)
-
-    return current_balance >= amount
-
-
 def record_transaction(transaction_data: dict) -> None:
     """Save transaction to CSV file.
 
@@ -110,8 +87,16 @@ def record_transaction(transaction_data: dict) -> None:
         ValidationError: If transaction_data doesn't match the Transaction model.
         OSError: If file cannot be written.
     """
+    # Ensure description exists (it's required in TransactionBase)
+    if "description" not in transaction_data:
+        transaction_data["description"] = f"{transaction_data['type']} of {transaction_data['amount']}"
+
     # Pydantic automatically validates all fields and types
-    transaction = Transaction(**transaction_data)
+    try:
+        transaction = Transaction(**transaction_data)
+    except Exception as e:
+        print(f"DEBUG: Pydantic Validation Error in record_transaction: {e}")
+        raise
 
     # Read existing transactions or start with empty list
     try:
@@ -127,15 +112,13 @@ def record_transaction(transaction_data: dict) -> None:
 
 
 def deposit(user: str, amount: float, source: str = "external") -> dict:
-    """Process deposit transaction.
-    Deposit: money that comes from an EXTERNAL SOURCE, like a bank transfer or a
-    cash deposit.
+    """Process deposit transaction using the Account entity.
+    Deposit: money that comes from an EXTERNAL SOURCE.
 
     Args:
         user: Username receiving the deposit.
         amount: Amount to deposit.
-        source: Source identifier for the deposit. Defaults to "external".
-                Examples: "external", "bank", "card", "cash", "stripe", "paypal".
+        source: Source identifier for the deposit.
 
     Returns:
         Dictionary with deposit transaction details.
@@ -144,41 +127,38 @@ def deposit(user: str, amount: float, source: str = "external") -> dict:
         ValueError: If amount is not positive.
         FileNotFoundError: If user doesn't exist.
     """
-    if not utils.validate_amount(amount):
-        raise ValueError("Deposit amount must be positive")
-
     user_data = auth.get_user(user)
     if user_data is None:
         raise FileNotFoundError(f"User not found: {user}")
 
-    # Calculate current balance
-    initial_balance = float(user_data.get("balance", 0))
-    transactions = get_transaction_history(user)
-    current_balance = calculate_balance(transactions, initial_balance, user)
+    # Load current balance from history
+    history = get_transaction_history(user)
+    current_balance = calculate_balance(history, float(user_data.balance), user)
 
-    # Calculate new balance after deposit
-    new_balance = current_balance + amount
+    # Use Account entity for business logic
+    account = Account(owner_username=user, balance=current_balance)
+    new_balance = account.add_funds(amount)
 
     # Create transaction record
-    transaction = {
+    transaction_data = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "owner": user,
         "type": "deposit",
         "from_user": source,
         "to_user": user,
-        "amount": str(amount),
-        "balance": str(new_balance),
+        "amount": float(amount),
+        "balance": float(new_balance),
         "description": f"Deposit of {amount} from {source}",
     }
 
     # Record transaction
-    record_transaction(transaction)
+    record_transaction(transaction_data)
 
-    return transaction
+    return transaction_data
 
 
 def transfer(from_user: str, to_user: str, amount: float) -> dict:
-    """Process transfer transaction.
+    """Process transfer transaction between two Account entities.
     Transfer: money that goes from one user to another.
 
     Args:
@@ -193,9 +173,6 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
         ValueError: If amount is not positive or insufficient balance.
         FileNotFoundError: If users don't exist.
     """
-    if not utils.validate_amount(amount):
-        raise ValueError("Transfer amount must be positive")
-
     # Validate both users exist
     sender_data = auth.get_user(from_user)
     receiver_data = auth.get_user(to_user)
@@ -205,48 +182,43 @@ def transfer(from_user: str, to_user: str, amount: float) -> dict:
     if receiver_data is None:
         raise FileNotFoundError(f"Receiver user not found: {to_user}")
 
-    # Validate sufficient balance
-    if not validate_transfer_balance(from_user, amount):
-        raise ValueError(f"Insufficient balance for transfer from {from_user}")
+    # Load and instantiate sender account
+    sender_history = get_transaction_history(from_user)
+    sender_current = calculate_balance(sender_history, float(sender_data.balance), from_user)
+    sender_account = Account(owner_username=from_user, balance=sender_current)
 
-    # Calculate balances for both users
-    sender_initial = float(sender_data.get("balance", 0))
-    receiver_initial = float(receiver_data.get("balance", 0))
+    # Load and instantiate receiver account
+    receiver_history = get_transaction_history(to_user)
+    receiver_current = calculate_balance(receiver_history, float(receiver_data.balance), to_user)
+    receiver_account = Account(owner_username=to_user, balance=receiver_current)
 
-    sender_transactions = get_transaction_history(from_user)
-    receiver_transactions = get_transaction_history(to_user)
-
-    sender_current_balance = calculate_balance(sender_transactions, sender_initial, from_user)
-    receiver_current_balance = calculate_balance(receiver_transactions, receiver_initial, to_user)
-
-    # Calculate new balances
-    sender_new_balance = sender_current_balance - amount
-    receiver_new_balance = receiver_current_balance + amount
+    # Execute business logic (validations happen inside entities)
+    new_sender_balance = sender_account.remove_funds(amount)
+    new_receiver_balance = receiver_account.add_funds(amount)
 
     # Get timestamp for both transactions
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Create transfer_out transaction for sender
+    # Create transfer records
     transfer_out = {
         "date": timestamp,
         "owner": from_user,
         "type": "transfer_out",
         "from_user": from_user,
         "to_user": to_user,
-        "amount": str(amount),
-        "balance": str(sender_new_balance),
+        "amount": float(amount),
+        "balance": float(new_sender_balance),
         "description": f"Transfer of {amount} to {to_user}",
     }
 
-    # Create transfer_in transaction for receiver
     transfer_in = {
         "date": timestamp,
         "owner": to_user,
         "type": "transfer_in",
         "from_user": from_user,
         "to_user": to_user,
-        "amount": str(amount),
-        "balance": str(receiver_new_balance),
+        "amount": float(amount),
+        "balance": float(new_receiver_balance),
         "description": f"Transfer of {amount} from {from_user}",
     }
 
