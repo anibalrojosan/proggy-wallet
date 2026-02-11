@@ -1,3 +1,17 @@
+"""
+Pydantic models that validate that the data is correct and consistent.
+This module contains the following models:
+- UserBase
+- UserCreate
+- User
+- UserInDB
+- TransactionBase
+- TransactionCreate
+- Transaction
+It prevenst data corruption and ensures that the data is consistent and valid.
+"""
+
+
 from datetime import datetime
 from typing import Literal
 
@@ -20,10 +34,14 @@ class User(UserBase):
     balance: float = Field(default=0.0, ge=0)
     # password is not included here for security when returning data
 
+class UserInDB(User):
+    """User model as stored in the database (includes hashed password)."""
+    password: str
+
 class TransactionBase(BaseModel):
     """Base structure of a transaction."""
     amount: float = Field(..., gt=0)
-    description: str = Field(..., min_length=1, max_length=100)
+    description: str | None = Field(None, max_length=100)
     type: Literal["deposit", "transfer_in", "transfer_out"]
 
 class TransactionCreate(TransactionBase):
@@ -35,6 +53,9 @@ class TransactionCreate(TransactionBase):
 class Transaction(TransactionCreate):
     """Complete transaction with system-generated metadata.
     If a date is not provided, the system will generate the current date and time."""
-    id: int | None = Field(None, description="Unique identifier for the transaction")
     date: datetime = Field(default_factory=datetime.now)
-    balance_after: float
+    balance: float
+
+    model_config = {
+        "extra": "forbid"  # Forbidden extra fields
+    }

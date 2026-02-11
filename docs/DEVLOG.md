@@ -299,3 +299,91 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 **Next Step**: Transition to Phase 2 (Architecture & Robustness), starting with **Class Diagrams** and **ERD design** for OOP refactoring and PostgreSQL integration.
 
 ---
+
+[2026-02-10]
+
+## Phase 2: Initiation & Data Modeling (Sprint 13)
+
+#### **Task 1: Architecture Design & Documentation**
+*   **OOP Blueprint**: Designed the core class structure for Phase 2 using Mermaid.js.
+*   **Decoupling Strategy**: Established the separation between `User` (identity) and `Account` (financial state) to follow the Single Responsibility Principle.
+*   **Documentation**: Created `docs/CLASS_DIAGRAM.md` explaining the rationale behind the new architecture and the DTO (Data Transfer Object) pattern.
+
+#### **Task 2: Data Validation with Pydantic**
+*   **Schema Definition**: Implemented `backend/modules/models.py` with strict Pydantic models for `User` and `Transaction`.
+*   **Fail-Fast Validation**: Integrated automatic checks for email formatting (`EmailStr`), positive amounts (`gt=0`), and restricted transaction types (`Literal`).
+*   **Modern Python Standards**: Adopted Python 3.10+ syntax (`| None` for unions) and enforced strict linting with Ruff.
+
+#### **Concepts that I learned:**
+*   **DTO (Data Transfer Objects) Pattern**: Understanding why we split models into `Base`, `Create`, and `Final` versions. This prevents sensitive data leaks (like passwords) and follows the **DRY** principle by sharing common fields across different stages of the data lifecycle.
+*   **Refactoring Strategy**: Learned that a professional refactor involves restructuring code without changing its external behavior. The "Build and Replace" strategy allows for a smooth transition from procedural functions to OOP without breaking the application.
+*   **Pydantic Power Features**: Explored how `Field` constraints (like `gt=0` or `min_length`) and `Literal` types act as "guards" for the application, ensuring data integrity before it even reaches the business logic.
+*   **Modern Python Typing**: Transitioned from the old `Optional[T]` syntax to the modern Python 3.10+ Pipe operator (`T | None`), making the code cleaner and more readable.
+
+**Current Status:** Data layer is now robust and self-validating. Ready to transition from procedural logic to Object-Oriented entities.
+
+---
+
+[2026-02-11]
+
+## Phase 2: Core Entities & Security Layer (Sprint 14)
+
+#### **Task 1: OOP Entity Implementation**
+*   **Financial Engine**: Created the `Account` entity in `backend/modules/entities.py`, encapsulating balance management and internal business rules (e.g., preventing insufficient funds).
+*   **Identity Management**: Implemented the `User` entity with 'composition', where each user automatically owns and manages an `Account` instance.
+*   **Encapsulation**: Moved logic from standalone functions to class methods, ensuring that the internal state of objects can only be modified through authorized behaviors.
+
+#### **Task 2: Secure Authentication Upgrade**
+*   **Password Hashing**: Integrated `bcrypt` for industry-standard security. Replaced legacy plain-text passwords with non-reversible cryptographic hashes.
+*   **Data Migration**: Developed and executed `migrate_passwords.py` to transform the existing `users.json` database into a secure hashed format.
+*   **Auth Refactoring**: Updated `auth.py` to leverage the `User` entity's `check_password` method, ensuring the entire login flow is now secure and OOP-compliant.
+
+#### **Task 3: API Integration & Bug Fixing**
+*   **Model Compatibility**: Refactored `backend/app.py` to handle the transition from dictionary-based data to Pydantic objects, resolving "subscriptable" type errors.
+*   **Dependency Management**: Successfully managed new library installations (`bcrypt`, `email-validator`) using `uv`.
+
+**Current Status:** Sprint 14 core entities are functional and secure. The system successfully validates hashed credentials and manages state via objects.
+
+#### **Task 4: Wallet Module Refactoring (OOP Integration)**
+*   **Account Entity Integration**: Refactored `backend/modules/wallet.py` to use the new `Account` entity. 
+    *   In `deposit`: Replaced manual addition with `account.add_funds(amount)`.
+    *   In `transfer`: Implemented a dual-account flow using `sender_account.remove_funds(amount)` and `receiver_account.add_funds(amount)`.
+*   **Logic Consolidation**: Eliminated the redundant `validate_transfer_balance` function, centralizing business rules (like overdraft protection) within the `Account` class (Single Source of Truth).
+*   **Data Access Upgrade**: Updated code to use dot notation (`user_data.balance`) for Pydantic models, improving consistency with the new type system.
+
+#### **Task 5: Critical Bug Fix - CSV Persistence Error**
+*   **Issue**: After the refactor, deposits and transfers were failing with a `400 Bad Request` or `500 Internal Server Error`. The backend logs showed: `ValueError: dict contains fields not in fieldnames: 'id'`.
+*   **Root Cause Analysis**: 
+    1.  The `record_transaction` function was manually injecting an `id` field into the transaction dictionary before saving.
+    2.  The `Transaction` Pydantic model had `extra: "allow"`, which masked the issue during validation.
+    3.  The `csv.DictWriter` in `utils.py` strictly enforces that the data dictionary keys must match the CSV headers. Since `id` was not a column in `transactions.csv`, the writer crashed.
+*   **Resolution**: Removed the manual `id` injection in `wallet.py`. This ensured the transaction data structure remains perfectly aligned with the CSV schema.
+
+#### **Key Learnings & Insights:**
+1.  **The Hidden Cost of `extra: "allow"`**: While flexible, allowing extra fields in Pydantic models can hide data integrity issues that only surface during persistence (like writing to a strict CSV). Now I opted to set `"extra": "forbid"` so Pydantic will raise an error if a field is not in the model.
+2.  **Strict CSV Contracts**: The Python `csv` module is very sensitive to dictionary keys. When refactoring towards OOP/Pydantic, it's crucial to ensure that the "dumped" dictionaries don't contain metadata fields that aren't present in the storage file. This sensitivity is due to the behavior of `csv.DictWriter` (it creates a 'contract'), which raises a `ValueError` if a field is not in the headers.
+3.  **Frontend Debugging**: Encountered an issue where the browser would refresh too quickly to read error messages. 
+    *   *Pro-tip*: Using "Preserve Log" in DevTools is essential when debugging forms that trigger page reloads.
+
+## Phase 2: Layered Architecture Refactor & Critical Bug Fixes
+
+#### **Task 6: Backend Layered Architecture Implementation**
+*   **Data Layer Refinement**: Introduced `UserInDB` in `models.py` to strictly separate persistence data (including password hashes) from public user profiles.
+*   **Service Layer Upgrade**: Refactored `AuthService` in `auth.py` to handle the transition from raw JSON dictionaries to Pydantic models and Domain Entities.
+*   **Domain Logic Consolidation**: Updated `entities.py` to ensure the `User` entity correctly maps password hashes from the database model, enabling secure authentication.
+
+#### **Task 7: System-Wide Bug Resolution**
+*   **App Balance Fix**: Resolved a critical UI bug where the balance displayed "Error loading balance". Fixed the `app.get("/wallet/status/{username}")` endpoint to correctly access the `Account` entity within the `User` object.
+*   **Deposit & Transfer Restoration**: Fixed a `500 Internal Server Error` in wallet operations caused by legacy calls to non-existent functions. Replaced all procedural calls with the new `AuthService.get_user_entity()` pattern.
+*   **JSON Parsing Fix**: Corrected a data structure mismatch in `AuthService._load_users_data()` that was preventing the system from iterating over the user list correctly.
+
+#### **Task 8: Architecture Documentation**
+*   **Internal Design Standards**: Updated `docs/ARCHITECTURE.md` to include a detailed map of the new layered architecture (API -> Orchestration -> Persistence -> Domain).
+*   **Error Handling Policy**: Documented a standardized exception propagation strategy to ensure technical errors are gracefully converted into meaningful HTTP responses for the frontend.
+
+#### **Key Learnings & Insights:**
+1.  **Decoupling for Stability**: This refactor proved that decoupling the "how" (JSON storage) from the "what" (Business Rules) makes the system much easier to debug. Once the `AuthService` was fixed, multiple bugs across the app were resolved simultaneously.
+2.  **The Role of DTOs**: Using `UserInDB` as a specific model for database operations prevented security leaks and made the code more declarative. It acts as a "security gate" between the raw storage and the application logic.
+3.  **Layered Error Propagation**: Moving from generic `except Exception` blocks to specific error catching (e.g., `ValueError` for business rules, `FileNotFoundError` for data) significantly improved the API's reliability and the quality of frontend feedback.
+
+**Current Status:** The system is now fully stable under the new layered architecture. All core features (Login, Balance, Deposits, Transfers, History) are operational. **Next:** Proceed to Sprint 15.
