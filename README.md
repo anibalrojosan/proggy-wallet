@@ -6,9 +6,16 @@
 
 It serves as a definitive technical reference for industry best practices, implementing a **Monolithic Architecture** through Django’s **MTV (Model-Template-View)** pattern. By consolidating logic and presentation, the project integrates advanced **Python logic**, **SQL persistence**, and automated **DevOps workflows** (Docker & CI/CD) to demonstrate the rigorous evolution from initial code to global cloud deployment.
 
----
+## 📑 Index
+1. [🚀 Quick Start](#quick-start)
+2. [🧪 Quality Control & Testing](#quality-control--testing)
+3. [📂 Project Structure](#project-structure)
+4. [🏗️ Architecture & Security](#architecture--security)
+5. [🛠️ Tech Stack](#tech-stack)
 
-## 🚀 Getting Started
+
+
+## Quick Start
 
 ### 1. Prerequisites
 This project uses [**uv**](https://docs.astral.sh/uv/) for blazing-fast Python package and project management. If you don't have it installed:
@@ -17,7 +24,7 @@ This project uses [**uv**](https://docs.astral.sh/uv/) for blazing-fast Python p
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. Installation
+### 2. Installation & Setup
 Clone the repository and sync the environment:
 
 ```bash
@@ -26,34 +33,18 @@ cd proggy-wallet
 uv sync
 ```
 
----
-
-## 💻 How to Run
-
-### Backend (Python)
-You can run the system in two ways:
-
-*   **Main Integration Script (CLI Simulation):**
-    To run a full end-to-end simulation of the backend logic:
-    ```bash
-    uv run python -m backend.main
-    ```
-*   **API Server (FastAPI):**
-    To start the server for frontend communication:
+### 3. Execution
+*   **API Server (FastAPI):** Start the backend for frontend communication:
     ```bash
     uv run uvicorn backend.app:app --reload
     ```
+*   **Frontend:** Open `frontend/index.html` in your browser (Recommended: Use VS Code 'Live Server').
+*   **CLI Simulation:** Run a full end-to-end logic test:
+    ```bash
+    uv run python -m backend.main
+    ```
 
-### Frontend (Web Interface)
-Since the frontend is built with HTML5 and jQuery, you can simply:
-1.  Navigate to the `frontend/` folder.
-2.  Open `index.html` in any modern web browser.
-
-*Note: For the best experience while the API is running, using a local server extension (like VS Code 'Live Server') is recommended.*
-
----
-
-## 🛠 Quality Control & Testing
+## Quality Control & Testing
 We enforce high code quality standards using **Ruff** and **Pytest**.
 
 *   **Run Unit Tests:**
@@ -69,32 +60,37 @@ We enforce high code quality standards using **Ruff** and **Pytest**.
     uv run ruff format backend/
     ```
 
----
-
-## 📂 Project Structure Overview
+## Project Structure
 ```text
 proggy-wallet/
 ├── backend/
-│   ├── data/          # Persistence layer (CSV/JSON)
-│   ├── modules/       # Core business logic (Auth, Wallet, Utils)
-│   ├── tests/         # Unit tests suite (Pytest)
-│   ├── app.py         # FastAPI entry point
-│   └── main.py        # Integration test script
-├── docs/              # Architecture, Roadmap, and ADRs
+│   ├── data/          # 🗄️ Persistence layer (Secure CSV/JSON)
+│   ├── modules/       # 🧠 Core business logic (Auth, Services, Entities)
+│   ├── tests/         # 🧪 Automated Unit Test suite (Pytest)
+│   ├── app.py         # 🌐 FastAPI REST entry point
+│   └── main.py        # 🚀 Integration test script
+├── docs/              # 📖 Architecture, Roadmap, and ADRs
 ├── frontend/
-│   ├── css/           # Custom styles & Bootstrap
-│   ├── js/            # Interactive logic (jQuery/Fetch API)
-│   └── *.html         # UI Views (Login, Menu, Transactions)
-├── pyproject.toml     # Project configuration & dependencies
-└── README.md          # Project documentation
+│   ├── css/           # 🎨 Custom styles & Bootstrap 5
+│   ├── js/            # ⚡ Interactive logic (jQuery & Fetch API)
+│   └── *.html         # 🖥️ UI Views (Login, Dashboard, Transfers)
+├── pyproject.toml     # ⚙️ Project configuration & dependencies
+└── README.md          # 🏠 Project documentation
 ```
 
----
+## Architecture & Security
+Currently, the project is in **Phase 2: Robustness & Architecture**, focusing on:
+*   **Layered Architecture:** Clear separation between API, Service Layer (`TransactionManager`), and Domain Entities.
+*   **OOP Core:** Financial logic encapsulated within `Account` and `User` classes.
+*   **Software Atomicity:** Manual rollback mechanisms to ensure financial transactions are "all-or-nothing".
+*   **Security:** Industry-standard password hashing using `bcrypt`.
+*   **Data Validation:** Strict schema enforcement with `Pydantic` (Fail-Fast principle).
 
-### Tech Stack
+## Tech Stack
 * **Frontend:** `HTML5`, `CSS/Bootstrap 5`, `JavaScript/jQuery`.
-* **Backend:** `Python`, `FastAPI` (Phase 1), `Django` (Phase 3).
-* **Modern Tooling:** `uv` (Manager), `Ruff` (Linter), `Pydantic` (Validation), `Pytest` (Testing).
-* **Infrastructure:** `Docker`, `GitHub Actions`.
+* **Backend:** `Python 3.12+`, `FastAPI`, `Pydantic V2`.
+* **Security:** `Bcrypt` password hashing.
+* **Tooling:** `uv` (Package Manager), `Ruff` (Linter/Formatter), `Pytest`.
+* **Infrastructure:** `Docker` (Coming soon), `GitHub Actions`.
 
-> Done with ❤️ by Aníbal Rojo.
+> Done with ❤️ by [Aníbal Rojo](https://github.com/anibalrojosan).
