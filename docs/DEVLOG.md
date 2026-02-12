@@ -1,4 +1,9 @@
-[2026-01-16]
+# DEVLOG
+
+This document outlines the development process of the `proggy-wallet` project. It is a record of the decisions made, the learnings gained, and the progress made.
+It is a living document that will be updated as the project evolves.
+
+# [2026-01-16]
 
 ## Initial Project Setup - Tooling Configuration
 
@@ -42,9 +47,7 @@
 
 **Current Status:** Setup complete, ready to start feature development. Next step: create `feat/backend-utils` branch for Sprint 1.
 
----
-
-[2026-01-17]
+# [2026-01-17]
 
 ## Phase1-01 and Phase1-02 Done
 
@@ -62,9 +65,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 **Next steps**: continue with the wallet transactions module in branch `backend-wallet`.
 
----
-
-[2026-01-18]
+# [2026-01-18]
 
 ## Phase1-03: Wallet Transactions Module Completed
 
@@ -99,9 +100,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 **Current Status:** Phase1-03 complete. All acceptance criteria met. Ready to proceed with Phase1-04 (main script integration) or move to frontend sprints.
 
----
-
-[2026-01-21]
+# [2026-01-21]
 
 ## Phase1-04: Create main script and integrate modules - Done
 
@@ -118,9 +117,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 **Current Status:** Phase 1-04 successfully completed. Backend is robust and ready for Frontend integration.
 
----
-
-[2026-01-23] 
+# [2026-01-23] 
 ## Frontend Foundations & Login Implementation
 
 #### **Added**:
@@ -137,9 +134,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 **Current Status:** Phases 1-05 and 1-06 completed. Next: further improvements to the frontend, add more page for transfers, transactions, etc.
 
----
-
-[2026-01-24]
+# [2026-01-24]
 
 ## Phase1-07: Dashboard Menu Implementation
 
@@ -153,9 +148,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 **Current Status**: Dashboard functional. Next: implementing specific wallet operations.
 
----
-
-[2026-01-25]
+# [2026-01-25]
 
 ## Phase1-08 & Phase1-09: Wallet Operations (Deposits & Transfers)
 
@@ -170,9 +163,7 @@ Create authentication functions in `backend/modules/auth.py`
 
 **Current Status**: Core wallet functionalities implemented on the frontend. Data persists in `localStorage`.
 
----
-
-[2026-01-26]
+# [2026-01-26]
 
 ## Phase1-10: Transaction History View
 
@@ -218,9 +209,7 @@ While doing tickets 07 to 10, I needed to review a lot of concepts of JS and jQu
 * **LocalStorage:** A system for saving data in the browser that persists even after refreshing the page.
 * **JSON (`.parse()` and `.stringify()`):** The format for converting complex objects into text and vice versa.
 
----
-
-[2026-01-27]
+# [2026-01-27]
 
 ## Phase1-11: Full-Stack Integration with FastAPI
 
@@ -259,9 +248,7 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 
 **Current Status:** Phase1-11 successfully completed. The application is now a fully functional Full-Stack system. Next step: add unit tests for critical functions and update documentation.
 
----
-
-[2026-01-30]
+# [2026-01-30]
 
 ## Phase1-12: Quality Assurance & Unit Testing (Part 1)
 
@@ -274,9 +261,7 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 
 **Current Status**: Backend core (Utils & Auth) protected by tests. Ready to proceed with the Wallet module.
 
----
-
-[2026-01-31]
+# [2026-01-31]
 
 ## Phase1-12: Wallet Testing & Project Finalization (Phase 1 Done)
 
@@ -298,9 +283,7 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 
 **Next Step**: Transition to Phase 2 (Architecture & Robustness), starting with **Class Diagrams** and **ERD design** for OOP refactoring and PostgreSQL integration.
 
----
-
-[2026-02-10]
+# [2026-02-10]
 
 ## Phase 2: Initiation & Data Modeling (Sprint 13)
 
@@ -322,9 +305,7 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 
 **Current Status:** Data layer is now robust and self-validating. Ready to transition from procedural logic to Object-Oriented entities.
 
----
-
-[2026-02-11]
+# [2026-02-11]
 
 ## Phase 2: Core Entities & Security Layer (Sprint 14)
 
@@ -387,3 +368,44 @@ While doing issue #11, I had to investigate and learn a lot of topics of web dev
 3.  **Layered Error Propagation**: Moving from generic `except Exception` blocks to specific error catching (e.g., `ValueError` for business rules, `FileNotFoundError` for data) significantly improved the API's reliability and the quality of frontend feedback.
 
 **Current Status:** The system is now fully stable under the new layered architecture. All core features (Login, Balance, Deposits, Transfers, History) are operational. **Next:** Proceed to Sprint 15.
+
+
+
+# [2026-02-12]
+
+## Phase 2: Transaction Engine & Service Layer (Sprint 15)
+
+#### **Task 1: Transaction Manager Implementation**
+*   **Service Layer Creation**: Developed `backend/modules/services.py` to house the `TransactionManager` class, centralizing the orchestration of financial movements.
+*   **Atomic Transfer Logic**: Implemented a "Rollback" mechanism in `execute_transfer`. If the deposit into the destination account fails, the system automatically reverts the withdrawal from the sender's account, ensuring no money is lost during technical failures.
+*   **Encapsulated Deposits**: Created `execute_deposit` to handle fund injections, ensuring all entries are validated and recorded through a single authorized path.
+
+#### **Task 2: Persistence & Validation Integration**
+*   **CSV Append Logic**: Upgraded `backend/modules/utils.py` with `append_csv_file()`. This new utility uses Python's `"a"` (append) mode to ensure transaction history is cumulative and not overwritten.
+*   **Pydantic Enforcement**: Integrated `TransactionCreate` model validation within the recording flow. Every transaction is now validated against business rules (e.g., positive amounts) before touching the physical disk.
+*   **Audit Trail**: Standardized the `_record` method to ensure consistent data across all transaction types (`date`, `type`, `from_user`, `to_user`, `amount`, `balance`).
+
+#### **Key Learnings & Insights:**
+Why the transaction manager was designed this way:
+1.  **Orchestration vs. Entity Logic**: 
+    -   **Service Layer Pattern**: this pattern was used to decouple the "how" (CSV storage) from the "what" (Business Rules). 
+    - While the `Account` entity (from Sprint 14) knows *how* to change its own balance, it shouldn't know about other accounts or how to write to a CSV. 
+    - The `TransactionManager` coordinates the transfer between two accounts and the storage system.
+2.  **Software Atomicity**: In a system without a formal SQL database, we must simulate "All-or-Nothing" operations. 
+    - **'Atomicity'** means that a complex operation must be a unique unit of work and must be indivisible. In other words, a complex operation must be completed correctly and if not, the operation must not be executed at all. For this wallet case, the manual rollback logic ensures data integrity even when errors occur mid-process. 
+    - For example, if the deposit into the destination account fails, the system automatically reverts the withdrawal from the sender's account, ensuring no money is lost during technical failures. 
+    - This is a very important concept to understand and apply in any system, not only in this one.
+3.  **Single Responsibility Principle (SRP)**: 
+    - By moving transaction logic out of `wallet.py` and into a dedicated service, we've made the code easier to test and maintain. 
+    - `wallet.py` is now becoming a legacy bridge, while `services.py` represents the future-proof core of the app.
+4.  **Defensive Persistence**: 
+    - Using a specific `append` function instead of a generic `write` function prevents catastrophic data loss. 
+    - The logic to write the CSV header only when the file is new ensures the history remains a valid, readable dataset for the frontend.
+5. **Using services for escalability**
+    - Separating the logic in services allows for easier scalability and maintenance of the code.
+    - This way it's easier to migrate the data from a flat file to a database in the future.
+6. **Data integrity**:
+    - Using append_csv_file() instead of write_csv_file() ensures that the data is added to the file and not overwritten.
+    - This way, the movements history (audit trail) is not lost and the history is preserved.
+
+**Current Status:** Sprint 15 completed. The core financial engine is now robust, atomic, and follows professional OOP standards. Ready for Sprint 16 (Database Setup).

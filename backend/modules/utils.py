@@ -91,6 +91,24 @@ def write_csv_file(path: str, data: list[dict[str, Any]]) -> None:
         writer.writerows(data)
 
 
+def append_csv_file(path: str, data: list[dict[str, Any]]) -> None:
+    """Append data to an existing CSV file or create a new one."""
+    if not data:
+        return
+
+    file_path = Path(path)
+    file_exists = file_path.exists()
+    fieldnames = data[0].keys()
+
+    # Use "a" for append
+    with open(file_path, "a", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        # Write the header only if the file is new
+        if not file_exists:
+            writer.writeheader()
+        writer.writerows(data)
+
+
 def validate_amount(amount: float) -> bool:
     """Validate that amount is positive.
 
