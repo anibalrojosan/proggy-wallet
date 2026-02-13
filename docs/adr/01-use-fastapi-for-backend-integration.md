@@ -4,12 +4,12 @@
 Accepted
 
 ## Context
-In Phase 1 of the Proggy Wallet project, we needed to transition from standalone Python scripts to a connected web application. We required a backend framework that could bridge the gap between our Python logic (`auth.py`, `wallet.py`) and the jQuery-based frontend.
+In Phase 1 of the Proggy Wallet project, I needed to transition from standalone Python scripts to a connected web application. I required a backend framework that could bridge the gap between our Python logic (`auth.py`, `wallet.py`) and the jQuery-based frontend.
 
 The primary candidates were **Flask** (a traditional micro-framework) and **FastAPI** (a modern ASGI framework).
 
 ## Decision
-We decided to use **FastAPI** as the core web framework for the backend.
+I decided to use **FastAPI** as the core web framework for the backend.
 
 ## Rationale
 The decision was based on several key factors relevant to modern development standards in 2026:
@@ -20,10 +20,10 @@ The decision was based on several key factors relevant to modern development sta
 4.  **Type Safety:** By leveraging Python type hints, FastAPI reduces bugs related to incorrect data types, which is critical for a financial application handling currency and user balances.
 
 ## Consequences
-*   **Positive:** We have a self-documenting API that is easy to test and highly robust against invalid inputs.
+*   **Positive:** I have a self-documenting API that is easy to test and highly robust against invalid inputs.
 *   **Positive:** The transition to more complex architectures (like Phase 2's OOP refactor) will be smoother due to the structured nature of FastAPI.
 *   **Negative:** There is a slightly steeper learning curve for developers only familiar with synchronous WSGI frameworks like Flask.
 *   **Neutral:** We must ensure the server is run using an ASGI server like `uvicorn` instead of standard Python execution.
 
 ---
-*Date: January 27, 2026* | *Author: Anibal Rojo*
+*Date: January 27, 2026* | *Author: Aníbal Rojo*

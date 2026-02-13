@@ -1,7 +1,7 @@
 [project]
 name = "proggy-wallet"
 version = "0.1.0"
-description = "Add your description here"
+description = "A professional full-stack fintech solution built with FastAPI and clean architecture principles."
 requires-python = ">=3.12"
 dependencies = [
     "bcrypt>=5.0.0",
