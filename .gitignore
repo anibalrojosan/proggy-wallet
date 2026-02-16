@@ -26,6 +26,7 @@ Thumbs.db
 backend/data/*.csv
 backend/data/*.json
 !backend/data/.gitkeep
+.env
 
 # Scripts and extra files
 migrate_passwords.py
