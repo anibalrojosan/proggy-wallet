@@ -74,3 +74,7 @@ classDiagram
     *   **Create:** Used only during registration/creation; it includes sensitive fields like `password` but lacks system-generated fields like `id` or `balance`.
     *   **Final/Out:** Used for responses and internal logic; it excludes sensitive data like passwords for security while including stateful data like `balance`.
     *   **Benefit:** This separation prevents critical security leaks, such as accidentally exposing password hashes through the API.
+
+---
+
+*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*

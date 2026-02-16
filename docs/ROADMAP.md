@@ -47,10 +47,11 @@ This document outlines the strategic technical progression from a basic Frontend
 
 ## 🟡 Phase 2: Robustness & Architecture
 
-**Goal:** Refactor procedural scripts into robust Object-Oriented Programming (OOP) and migrate to a relational database.
+**Goal:** Refactor procedural scripts into robust Object-Oriented Programming (OOP), implement a web API with FastAPI, and migrate to a relational database.
 
 ### Architecture & Logic
 
+* **API Implementation:** Create a modern REST API using **FastAPI** to handle requests from the frontend.
 * **OOP Refactoring:** Transform standalone functions into classes (`User`, `Account`, `Transaction`) with proper inheritance.
 * **Data Validation:** Implement **Pydantic** models to strictly validate user inputs and transaction amounts, replacing manual `if/else` checks.
 
@@ -94,3 +95,7 @@ This document outlines the strategic technical progression from a basic Frontend
 
 * **Cloud Deployment:**
     * Configure automated deployment to **Render** or **Railway** connected to the GitHub repository.
+
+    ---
+
+*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*

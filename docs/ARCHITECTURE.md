@@ -1,5 +1,7 @@
 # 🏗️ System Architecture: Proggy Wallet
 
+This document serves as one of the three documents that makes up the single source of truth of this project, along with [PRD.md](PRD.md) and [DATABASE.md](DATABASE.md). Here its defined the *architecture* of the project, *how* the components interact with each other and how the data flows to accomplish the business logic defined in the PRD.
+
 ## 1. Overview
 **Proggy Wallet** is a virtual wallet application designed to manage personal finances through a simple and secure web interface. The system enables users to perform core banking operations (deposits, transfers, and transaction history tracking) within a dynamic, real-time environment.
 

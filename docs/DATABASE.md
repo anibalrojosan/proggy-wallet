@@ -1,6 +1,6 @@
 # Database Design
 
-This document outlines the relational database schema for the Proggy Wallet application.
+This document serves as one of the three documents that makes up the single source of truth of this project, along with [ARCHITECTURE.md](ARCHITECTURE.md) and [PRD.md](PRD.md). Here its defined the *database* schema of the project, *where* and *how* the data is stored and how the entities interact with each other to accomplish the business logic defined in the PRD.
 
 ## Entity Relationship Diagram (ERD)
 
@@ -54,4 +54,6 @@ Records every movement of money.
 - **Data Integrity**: The schema includes database-level constraints (e.g., `balance >= 0` and `amount > 0`) to enforce business rules at the storage layer.
 - **Scalability**: While simple, this two-table structure provides a solid foundation for future features like categories or contact lists.
 
-*Last Updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*
+---
+
+*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*

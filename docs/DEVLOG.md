@@ -4,13 +4,24 @@ This document outlines the development process of the `proggy-wallet` project. I
 It is a living document that will be updated as the project evolves.
 
 ## 📑 Index
+
+### 🚀 Phase 2: Professionalization & Database integration
+- [[2026-02-16] - Review: Domain-Driven Design (DDD) Principles](#2026-02-16---review-domain-driven-design-ddd-principles)
+- [[2026-02-13] - Documentation: Project professionalization](#2026-02-13---documentation-project-professionalization)
 - [[2026-02-12] - Phase 2: Transaction engine & service layer (Sprint 15)](#2026-02-12---phase-2-transaction-engine--service-layer-sprint-15)
+- [[2026-02-12] - Review: Software Atomicity & Manual Rollbacks](#2026-02-12---review-software-atomicity--manual-rollbacks)
 - [[2026-02-11] - Phase 2: Core entities & security layer (Sprint 14)](#2026-02-11---phase-2-core-entities--security-layer-sprint-14)
 - [[2026-02-10] - Phase 2: Initiation & data modeling (sprint 13)](#2026-02-10---phase-2-initiation--data-modeling-sprint-13)
+- [[2026-02-10] - Review: Data Integrity with DTOs & Pydantic](#2026-02-10---review-data-integrity-with-dtos--pydantic)
+
+### 🏗️ Phase 1: MVP & Foundations
+<details>
+  <summary>Click to view Phase 1 Sprints (Jan 2026)</summary>
+
 - [[2026-01-31] - Phase 1: Wallet testing & project finalization](#2026-01-31---phase-1-wallet-testing--project-finalization)
 - [[2026-01-30] - Phase 1: Quality assurance & unit testing (part 1)](#2026-01-30---phase-1-quality-assurance--unit-testing-part-1)
 - [[2026-01-27] - Phase 1: Full-stack integration with FastAPI](#2026-01-27---phase-1-full-stack-integration-with-fastapi)
-- [[2026-01-26] - Phase 1: Transaction History View](#2026-01-26---phase-1-transaction-history-view)
+- [[2026-01-26] - Phase 1: Transaction history view](#2026-01-26---phase-1-transaction-history-view)
 - [[2026-01-25] - Phase 1: Wallet operations (deposits & transfers)](#2026-01-25---phase-1-wallet-operations-deposits--transfers)
 - [[2026-01-24] - Phase 1: Dashboard menu implementation](#2026-01-24---phase-1-dashboard-menu-implementation)
 - [[2026-01-23] - Phase 1: Frontend foundations & login implementation](#2026-01-23---phase-1-frontend-foundations--login-implementation)
@@ -18,6 +29,74 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-18] - Phase 1: Wallet transactions module completed](#2026-01-18---phase-1-wallet-transactions-module-completed)
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
+</details>
+
+---
+
+## [2026-02-16] - Review: Domain-Driven Design (DDD) Principles
+
+### **The Danger of Getters and Setters**
+In this project, I intentionally avoided the traditional use of automatic getters and setters. While common in many tutorials, they often lead to an **Anemic Domain Model**, where objects are just "bags of data" without real logic.
+*   **Encapsulation Breach**: A `set_balance()` method allows any part of the app to change financial data without validation.
+*   **Logic Leakage**: Validation rules (like "balance cannot be negative") end up scattered in controllers or UI code instead of being protected by the entity itself.
+*   **Inconsistency**: It becomes easy to change a state (balance) without performing the associated action (recording a transaction), breaking the system's integrity.
+
+Using accessors and mutators (getters and setters) is a common practice in many tutorials. However, in real systems they are considered a bad practice. In this project, a lot of the decisions were made based on the Domain-Driven Design (DDD) principles. Some of the concepts are shown below:
+
+### **Core DDD Concepts Applied**
+
+#### **1. Ubiquitous Language & Entities**
+It refers to the alignment of the code vocabulary with the financial business world. Instead of generic names, it encourages the use of **Entities** like `User` and `Account`.
+*   **Example**: Methods like `add_funds()` and `remove_funds()` in `entities.py` represent real-world actions, not just database updates.
+
+#### **2. Aggregates & Root Aggregates**
+An **Aggregate** is a cluster of associated objects treated as a single unit for data changes. It acts as a 'frontier of protection' for the objects inside it.
+*   **Root Aggregate**: The `User` class acts as the root. To reach their internal `Account`, you need to go through the `User` class ("The `User` is the only point of entry to manage how the internal state can be accessed and modified"). This ensures that any change to the account is consistent with the user's identity.
+
+#### **3. Invariants**
+**Invariants** are business rules that must always be true so the object is in a valid state.
+*   **Example**: The `Account` entity protects the invariant that a withdrawal cannot exceed the current balance. By checking this *inside* `remove_funds()`, it guarantees the system never enters an invalid state.
+
+#### **4. Domain Services**
+When an operation involves multiple entities and doesn't naturally belong to one, a **Domain Service** is used.
+*   **Example**: The `TransactionManager` in `services.py`. It coordinates a transfer between two different `Account` entities, ensuring the operation is handled correctly without the accounts needing to know about each other.
+
+#### **5. Value Objects & DTOs (Data Transfer Objects)**
+While primitives are used for simple values, the **Pydantic models** in `models.py` act as "guards". They ensure that data (like amounts or emails) is valid before it even reaches the business logic.
+
+#### **6. Layered Architecture**
+Strictly separate the project into layers to prevent "spaghetti code". It's a way to keep the code organized and easy to understand.
+*   **Domain Layer**: `entities.py` (The "Golden Rules" of the business).
+*   **Application Layer**: `services.py` and `wallet.py` (Orchestration of tasks).
+*   **Infrastructure Layer**: `utils.py` and `models.py` (Data persistence and validation).
+
+#### **7. Repositories**
+Decoupling data access. The `AuthService` and CSV utilities are evolving into the **Repository Pattern**, which will allow to swap the CSV files for a PostgreSQL database without touching the business logic in the entities. This is a very important concept to understand and apply in any system, not only in this one.
+
+### **Key Learnings & Insights:**
+1.  **Rich vs. Anemic**: Building a "Rich Domain Model" (where entities have behavior) makes the code self-documenting and much harder to break.
+2.  **Intent-Revealing Interfaces**: Naming methods after business actions (e.g., `execute_transfer`) makes the code's purpose clear to both developers and stakeholders.
+3.  **Future-Proofing**: DDD principles have prepared `proggy-wallet` for the upcoming migration to a real database, as the core logic is now independent of the storage implementation.
+
+---
+
+## [2026-02-13] - Documentation: Project professionalization
+
+### **Task 1: Community Standards & Governance**
+*   **Open Source Foundation**: Created `LICENSE` (MIT), `CONTRIBUTING.md`, and `SECURITY.md` in the root directory to align with industry standards for professional repositories.
+*   **Contribution Guidelines**: Documented the development workflow, including `uv` for dependency management, `Ruff` for linting/formatting, and `Pytest` for quality assurance.
+*   **Security Policy**: Established a vulnerability reporting protocol to ensure financial data integrity.
+
+### **Task 2: Architectural Evolution (Phase 2)**
+*   **ADR-03 Implementation**: Formally documented the decision to migrate from flat files (CSV/JSON) to **PostgreSQL**. This move addresses atomicity, concurrency, and data integrity needs for a production-ready system.
+*   **Layered Architecture Refinement**: Updated `ARCHITECTURE.md` with a revised **Layer Map**. Introduced the **Repository Pattern** to decouple business logic from the upcoming SQL persistence layer.
+*   **Documentation UX**: Refactored the `README.md` to include a navigation index, a "Project Evolution" section, and visual badges. Improved the technical narrative to highlight the core engineering pillars (Atomicity, Layered Design, and Security).
+
+### **Key Learnings & Insights:**
+1.  **Documentation as Engineering**: Professional documentation (ADRs, Layer Maps, Contributing guides) is as important as the code itself. It transforms a "personal script" into a "software product" that others can trust and contribute to.
+2.  **Visual Communication**: Using metaphors (emojis and structured headers) in technical documents significantly improves readability and helps communicate complex engineering concepts (like Atomicity or Layered Design) to a broader audience.
+
+**Current Status:** Repository documentation is up to date and governed. Architectural blueprints for PostgreSQL integration are complete. Ready for Sprint 16 (Database Design & Setup).
 
 ---
 
@@ -32,6 +111,10 @@ It is a living document that will be updated as the project evolves.
 *   **CSV Append Logic**: Upgraded `backend/modules/utils.py` with `append_csv_file()`. This new utility uses Python's `"a"` (append) mode to ensure transaction history is cumulative and not overwritten.
 *   **Pydantic Enforcement**: Integrated `TransactionCreate` model validation within the recording flow. Every transaction is now validated against business rules (e.g., positive amounts) before touching the physical disk.
 *   **Audit Trail**: Standardized the `_record` method to ensure consistent data across all transaction types (`date`, `type`, `from_user`, `to_user`, `amount`, `balance`).
+
+---
+
+## [2026-02-12] - Review: Software Atomicity & Manual Rollbacks
 
 ### **Key Learnings & Insights:**
 Why the transaction manager was designed this way:
@@ -111,6 +194,10 @@ Why the transaction manager was designed this way:
 *   **Schema Definition**: Implemented `backend/modules/models.py` with strict Pydantic models for `User` and `Transaction`.
 *   **Fail-Fast Validation**: Integrated automatic checks for email formatting (`EmailStr`), positive amounts (`gt=0`), and restricted transaction types (`Literal`).
 *   **Modern Python Standards**: Adopted Python 3.10+ syntax (`| None` for unions) and enforced strict linting with Ruff.
+
+---
+
+## [2026-02-10] - Review: Data Integrity with DTOs & Pydantic
 
 ### **Concepts that I learned:**
 *   **DTO (Data Transfer Objects) Pattern**: Understanding why we split models into `Base`, `Create`, and `Final` versions. This prevents sensitive data leaks (like passwords) and follows the **DRY** principle by sharing common fields across different stages of the data lifecycle.
