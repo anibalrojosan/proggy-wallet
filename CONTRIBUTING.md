@@ -14,11 +14,11 @@ This project uses [**uv**](https://docs.astral.sh/uv/) for dependency management
     cd proggy-wallet
     ```
 
-2.  **Install Dependencies**:
-    ```bash
-    uv sync
-    ```
-3.  **Create a Branch**: Use a descriptive name for your branch:
+2.  **Install Dependencies**: `uv sync`
+
+3.  **Run the Application**: Use **Docker Compose** for the database: `docker compose up -d`.
+
+4.  **Create a Branch**: Use a descriptive name for your branch:
     *   `feat/feature-name`
     *   `fix/bug-name`
     *   `docs/documentation-change`
@@ -42,12 +42,19 @@ All new features and bug fixes should include unit tests using **Pytest**.
 2.  Update the `README.md` or `docs/` with details of changes to the interface, this includes new environment variables, exposed ports, or location of data files.
 3.  The PR will be merged once it has been reviewed and passes all CI checks.
 
-## 📝 Commit Messages
+## 📝 Commit Message Convention
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` New features (e.g., `feat(db): add transactions table`)
+- `fix:` Bug fixes
+- `docs:` Documentation only changes
+- `refactor:` Code changes that neither fix a bug nor add a feature
+- `test:` Adding or correcting tests
 
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-*   `feat:` for new features.
-*   `fix:` for bug fixes.
-*   `docs:` for documentation changes.
-*   `chore:` for maintenance tasks.
+## 🏗️ Architecture Standards
+- Follow the **Layered Architecture** defined in `docs/ARCHITECTURE.md`.
+- Use **Pydantic** for all data validation.
+- Ensure all financial transactions are **atomic**.
 
-Thank you for your contributions! 
+---
+
+*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*

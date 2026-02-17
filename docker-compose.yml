@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:18
+    container_name: proggy_wallet_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/
+    shm_size: 128mb
+
+volumes:
+  postgres_data:
