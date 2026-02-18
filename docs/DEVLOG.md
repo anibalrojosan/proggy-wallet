@@ -6,6 +6,8 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🚀 Phase 2: Professionalization & Database integration
+- [[2026-02-18] - Phase 2: Data Access Layer - Reading (Sprint 17)](#2026-02-18---phase-2-data-access-layer---reading-sprint-17)
+- [[2026-02-16] - Phase 2: Database Design & Setup (Sprint 16)](#2026-02-16---phase-2-database-design--setup-sprint-16)
 - [[2026-02-16] - Review: Domain-Driven Design (DDD) Principles](#2026-02-16---review-domain-driven-design-ddd-principles)
 - [[2026-02-13] - Documentation: Project professionalization](#2026-02-13---documentation-project-professionalization)
 - [[2026-02-12] - Phase 2: Transaction engine & service layer (Sprint 15)](#2026-02-12---phase-2-transaction-engine--service-layer-sprint-15)
@@ -30,6 +32,41 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+## [2026-02-18] - Phase 2: Data Access Layer - Reading (Sprint 17)
+
+### **Task 1: Database Connection Management**
+*   **Connection Pooling**: Implemented `backend/database/connection.py` using `psycopg2.pool.SimpleConnectionPool`. This ensures efficient resource management by reusing a set of open connections (1-10) instead of opening a new one for every request.
+*   **Context Managers**: Designed `@contextmanager` functions (`get_db_connection` and `get_db_cursor`) to guarantee that database connections and cursors are always closed or returned to the pool, even if an error occurs during execution.
+*   **Environment Safety**: Configured the system to load `DATABASE_URL` from a `.env` file, avoiding hardcoded credentials and following the "Twelve-Factor App" methodology for configuration.
+
+### **Task 2: Repository Pattern Implementation**
+*   **Read-Only Operations**: Created `backend/database/repository.py` to encapsulate all SQL `SELECT` logic.
+*   **Data Mapping**: Utilized `RealDictCursor` to fetch rows as dictionaries, allowing seamless mapping into Pydantic models (`User`, `Transaction`). This decouples the database structure from the application's domain models.
+*   **Query Optimization**: Refined the transaction history query to handle the new `from_user_id` and `to_user_id` structure (*double-entry accounting*), ensuring a user can see both their incoming and outgoing movements in a single unified view. For this, I needed to modify `schema.sql` to add these new columns and indexes.
+
+### **Key Learnings & Insights:**
+1.  **Resource Lifecycle**: Understanding the "Sandwich" flow of context managers (Setup ➔ Yield ➔ Teardown) is crucial for preventing connection leaks in production environments.
+2.  **SQL vs. ORM**: Implementing raw SQL first provides a deep understanding of how the database handles joins and indexes before eventually abstracting this logic with an ORM like SQLAlchemy.
+3. **Ledger vs Double-Entry Accounting**: Using a double-entry accounting system is a more robust way to track transactions and balances. It allows for a more accurate and complete view of the financial state of the system and allows for better auditing and reconciliation.
+
+---
+
+## [2026-02-16] - Phase 2: Database Design & Setup (Sprint 16)
+
+### **Task 1: Relational Schema Design**
+*   **Schema Definition**: Created `backend/database/schema.sql` with a focus on data integrity.
+*   **Evolution to normalized Ledger**: Transitioned from a simple `related_user` text field to a more robust `from_user_id` and `to_user_id` foreign key system. This allows for atomic transaction recording (one row per transfer) and full referential integrity.
+*   **Constraints & Safety**: Implemented `CHECK` constraints at the database level to prevent negative balances and ensure transaction amounts are always positive, acting as a second line of defense behind Pydantic.
+
+### **Task 2: Performance Indexing**
+*   **Strategic Indexes**: Added B-Tree indexes on `username`, `from_user_id`, and `to_user_id`. This optimizes the most frequent operations: user lookups during login and history retrieval for the dashboard.
+
+### **Key Learnings & Insights:**
+1.  **Database-First Integrity**: Business rules (Invariants) should be enforced as close to the data as possible. While Python validates data, the database `CHECK` constraints are the ultimate source of truth.
+2.  **Indexing Trade-offs**: While indexes speed up reads (SELECTs), they slightly slow down writes (INSERTs). For a wallet app, where users check their balance/history (SELECTs) more often than they transfer money (INSERTs), this is the correct trade-off.
+
+---
 
 ---
 
