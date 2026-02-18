@@ -11,13 +11,15 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create transactions table (Ledger)
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('deposit', 'transfer_in', 'transfer_out')),
+    from_user_id INTEGER REFERENCES users(id), -- NULL if it's an external deposit
+    to_user_id INTEGER REFERENCES users(id),   -- NULL if it's an external withdrawal
+    type VARCHAR(20) NOT NULL CHECK (type IN ('deposit', 'withdrawal', 'transfer')),
     amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0),
-    related_user VARCHAR(50), -- Name of the other party in transfers
+    description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes to optimize frequent searches
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_from_user_id ON transactions(from_user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_to_user_id ON transactions(to_user_id);
