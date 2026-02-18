@@ -6,6 +6,8 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🚀 Phase 2: Professionalization & Database integration
+- [[2026-02-18] - Phase 2: Data Access Layer - Writing (Sprint 18)](#2026-02-18---phase-2-data-access-layer---writing-sprint-18)
+- [[2026-02-18] - Deep Dive: Database integration debugging session (Sprint 18)](#2026-02-18---deep-dive-database-integration-debugging-session-sprint-18)
 - [[2026-02-18] - Phase 2: Data Access Layer - Reading (Sprint 17)](#2026-02-18---phase-2-data-access-layer---reading-sprint-17)
 - [[2026-02-16] - Phase 2: Database Design & Setup (Sprint 16)](#2026-02-16---phase-2-database-design--setup-sprint-16)
 - [[2026-02-16] - Review: Domain-Driven Design (DDD) Principles](#2026-02-16---review-domain-driven-design-ddd-principles)
@@ -32,6 +34,55 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+## [2026-02-18] - Phase 2: Data Access Layer - Writing (Sprint 18)
+
+### **Task 1: Write Operations Implementation**
+*   **Transaction Persistence**: Implemented `create_transaction` in `backend/database/repository.py` to handle SQL `INSERT` operations. This replaces the previous CSV appending logic, enabling atomic and ACID-compliant transaction recording.
+*   **Balance Updates**: Developed `update_user_balance` to handle SQL `UPDATE` operations, ensuring user balances are modified securely within the database.
+*   **Schema Evolution**: Updated the database schema to include a `balance_after` column in the `transactions` table. This allows for a "running balance" history, improving auditability and user experience by showing the exact funds available after each movement.
+
+### **Task 2: Integration Testing (Sandbox)**
+*   **Sandbox Scripting**: Created `test_db.py` as a standalone integration script. This allowed me to verify the interaction between Python objects, Pydantic models, and the PostgreSQL database without needing to run the full FastAPI server or Frontend.
+*   **Full Cycle Verification**: The script successfully validated the complete flow: Reading a user ➔ Updating their balance ➔ Creating a new transaction record ➔ Verifying the history.
+
+### **Key Learnings & Insights:**
+1.  **Repository Responsibility**: The repository should remain "dumb". It should not calculate business logic (like the new balance); it should only save what the Service/Domain layer tells it to save.
+2.  **Explicit vs. Implicit**: While connection pools often handle cleanup, using explicit `conn.rollback()` in `except` blocks provides a clear safety net and documents the error-handling strategy for future developers.
+3.  **Consistency**: When introducing new columns like `balance_after`, I learned that I must simultaneously update the database schema (SQL), the repository logic (Python), and the testing data to avoid inconsistencies.
+
+## [2026-02-18] - Deep Dive: Database integration debugging session (Sprint 18)
+During the implementation of this sprint, I encountered a series of cascading errors that provided valuable lessons on **Layered Architecture Integration**. This one was possibly the hardest one to debug until now as it required me to modify different files, check the tables columns and use DBeaver to clean the data, start again from scratch and so on. 
+- The connection conflicts were very tricky because of the flow inside the context managers.
+- The next bugs were due mismatch between the CRUD methods implementations and how the database tables were defined in the models and the tables that I created so I can see them in DBeaver. e.g. the SQL query was returning raw columns like `from_user_id` (integers) instead of the expected domain-friendly fields like `from_user` (strings/usernames).
+
+
+#### **1. The Connection Pool Conflict (`InterfaceError`)**
+*   **The Error**: `psycopg2.InterfaceError: connection already closed`.
+*   **Root Cause**: I was mixing two different ways of managing connections. Inside a `with get_db_connection()` block, I was calling `get_db_cursor()`, which tried to manage its own connection lifecycle. Additionally, I was manually calling `conn.close()` inside the repository functions, confusing the Connection Pool which expected to receive the connection back.
+*   **The Fix**: I simplified the repository pattern. For write operations, I now use a single `with get_db_connection() as conn:` block and let the context manager handle the lifecycle (opening, committing/rolling back, and returning to the pool). I removed all manual `conn.close()` calls.
+
+#### **2. The Model-Database Mismatch (`ValidationError`)**
+*   **The Error**: Pydantic raised `ValidationError` because required fields like `owner` or `balance` were missing from the data returned by the database.
+*   **Root Cause**: My SQL query was doing a simple `SELECT *`, returning raw columns like `from_user_id` (integers). However, my Pydantic `Transaction` model expects domain-friendly fields like `from_user` (strings/usernames).
+*   **The Fix**: I rewrote the SQL query in `get_transactions_by_user` to perform `JOIN`s with the `users` table and aliased the columns (e.g., `u.username AS from_user`) to match the Pydantic model exactly.
+
+#### **3. Data Type Inconsistency (`Literal Error`)**
+*   **The Error**: `Input should be 'deposit', 'transfer_in'...`.
+*   **Root Cause**: During previous manual testing, I had inserted "dirty data" into the database (e.g., transaction types in uppercase `DEPOSIT` or invalid strings like `transfer`). Pydantic's strict validation correctly rejected these when trying to load history.
+*   **The Fix**: I purged the database using `DROP/CREATE` to start with a clean slate, ensuring all new data strictly adhered to the allowed literals defined in the model.
+
+#### **4. Missing Column in the Model (`balance_after`)**
+*   **The Error**: The Pydantic model required a `balance` field, but the SQL table didn't have it. For quick testing, I hardcoded it to `0.0`.
+*   **Root Cause**: A desynchronization between the Domain definition (Model) and the Persistence definition (Schema).
+*   **The Fix**: I applied a schema change (`ALTER TABLE` logic) to add `balance_after`. When fixed, I updated `create_transaction` to accept this value from the business layer (`transaction.balance_after`) and save it, ensuring the data is real and persistent. I also had to update the SQL tables in Dbeaver so the transactions table had the new column and continue the tests.
+
+**Conclusion**: 
+- This session (and particularly the debugging session) makes me think that the hardest part of software engineering is the **Integration**. Unit tests might pass in isolation, but only *integration tests* (like `test_db.py`) reveal the friction points between Python objects, SQL tables, and connection managers. 
+- I'm glad that the approach of these project it's to progressively add abstraction layers and not to jump to the next layer without fully understanding the current one. Without that approach, probably I would have used an ORM or framework that takes care of the database operations and would never really experienced the confusion that I had during this sprint.
+- Using integration tests allows to check if the models I implemented, the CRUD methods and the SQL database I'm looking in dbeaver are consistent and working as expected.
+
+---
 
 ## [2026-02-18] - Phase 2: Data Access Layer - Reading (Sprint 17)
 
