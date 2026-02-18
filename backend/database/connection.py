@@ -1,8 +1,9 @@
-import os 
+import os
+from contextlib import contextmanager
+
+from dotenv import load_dotenv
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
-from contextlib import contextmanager
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -42,5 +43,5 @@ def get_db_cursor():
     # Before creating the cursor, get a connection from the pool
     with get_db_connection() as conn:
         # Use RealDictCursor to return results as dictionaries
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor: 
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             yield cursor
