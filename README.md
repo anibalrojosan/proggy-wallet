@@ -6,7 +6,7 @@
 
 > This project is under active development. Currently it's in **Phase 2: Robustness & Architecture**, where I'm refactoring the previous codebase to implement a **Repository Pattern** and migrate to **PostgreSQL** as the primary relational database management system.
 >
-> You can check the [DEVLOG](docs/DEVLOG.md) to follow my progress, technical hurdles, and implemented solutions while building this app.
+> You can check the [DEVLOG](docs/development/DEVLOG.md) to follow my progress, technical hurdles, and implemented solutions while building this app.
 
 **Proggy Wallet** is a comprehensive engineering roadmap designed to architect a production-ready **Full-Stack Fintech solution**. This project documents the complete lifecycle of modern software development, bridging the gap between a dynamic **Frontend prototype** and a scalable **Django ecosystem**.
 
@@ -35,7 +35,7 @@ Proggy Wallet combines a modern user experience with a robust backend engine. Th
 
 This document provides a comprehensive overview of the project's evolution, from the initial prototype to the current state:
 
-- 📝 **[DEVLOG](docs/DEVLOG.md)**: Daily technical logs, hurdles, and solutions.
+- 📝 **[DEVLOG](docs/development/DEVLOG.md)**: Daily technical logs, hurdles, and solutions.
 - 🗺️ **[ROADMAP](docs/ROADMAP.md)**: Our path from prototype to production.
 - 🏗️ **[ARCHITECTURE](docs/ARCHITECTURE.md)**: Deep dive into our system design and ADRs.
 
@@ -85,8 +85,11 @@ proggy-wallet/
 │   └── main.py            # 🚀 Integration test script
 ├── docs/              
 │   ├── adr/               # 📝 Architecture Decision Records (ADRs)
-│   ├── ARCHITECTURE.md    # 🏗️ System design & Layer map
-│   └── DEVLOG.md          # 📝 Daily technical logs & hurdles
+│   ├── development/       # 📝 Development guide and DEVLOG
+│   └── ARCHITECTURE.md    # 📝 System design & Layer map
+│   └── DATABASE.md        # 📝 Database schema and data model
+│   └── PRD.md             # 📝 Project Requirements Document
+│   └── ROADMAP.md         # 📝 Technical Roadmap
 ├── frontend/
 │   ├── css/               # 🎨 Custom styles & Bootstrap 5
 │   ├── js/                # ⚡ Interactive logic (jQuery & Fetch API)

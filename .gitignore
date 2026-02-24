@@ -30,7 +30,7 @@ backend/data/*.json
 
 # Scripts and extra files
 migrate_passwords.py
-github_projects.md
+SPRINTS.md
 improvements.md
 
 # Database tests

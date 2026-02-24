@@ -1,6 +1,8 @@
+from psycopg2.extras import RealDictCursor
+
 from backend.database.connection import get_db_connection, get_db_cursor
 from backend.modules.models import Transaction, TransactionCreate, User
-from psycopg2.extras import RealDictCursor
+
 
 # ------------READ OPERATIONS------------
 # This functions use get_db_cursor that internally handles its own connection.
@@ -22,14 +24,14 @@ def get_user_by_username(username: str) -> User | None:
 
 def get_transactions_by_user(username: str) -> list[Transaction]:
     '''Get the transactions history for a user'''
-    
+
     # 1. Select only the columns that the Transaction model accepts.
     # 2. Do JOIN to get the usernames (strings) instead of IDs.
     # 3. Map 'created_at' to 'date'.
     # 4. Dummy value for 'balance' (0.0) because the table doesn't have it but the model requires it.
-    
+
     query = """
-        SELECT 
+        SELECT
             t.amount,
             t.description,
             t.type,
@@ -44,19 +46,19 @@ def get_transactions_by_user(username: str) -> list[Transaction]:
         WHERE (u1.username = %s OR u2.username = %s)
         ORDER BY t.created_at DESC
     """
-    
+
     transactions = []
     try:
         with get_db_cursor() as cursor:
             # Pasamos 'username' 3 veces: para el SELECT (owner) y para el WHERE (OR)
             cursor.execute(query, (username, username, username))
             results = cursor.fetchall()
-            
+
             for row in results:
                 # RealDictCursor allows 'row' to be a clean dictionary
                 # that exactly matches the definition of Transaction.
                 transactions.append(Transaction(**row))
-                
+
         return transactions
     except Exception as e:
         print(f"Error getting transactions: {e}")
@@ -71,7 +73,7 @@ def update_user_balance(username: str, new_balance: float) -> bool:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    "UPDATE users SET balance = %s WHERE username = %s", 
+                    "UPDATE users SET balance = %s WHERE username = %s",
                     (new_balance, username)
                 )
                 conn.commit()
@@ -89,11 +91,11 @@ def create_transaction(transaction: TransactionCreate, balance_after: float) -> 
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                
+
                 # Get the ID of the 'from_user'
                 cursor.execute("SELECT id FROM users WHERE username = %s", (transaction.from_user,))
                 res_from = cursor.fetchone()
-                
+
                 # Handle special case if the source user doesn't exist
                 if not res_from:
                     print(f"Error: Source user '{transaction.from_user}' not found.")
@@ -103,7 +105,7 @@ def create_transaction(transaction: TransactionCreate, balance_after: float) -> 
                 # Get the ID of the 'to_user'
                 cursor.execute("SELECT id FROM users WHERE username = %s", (transaction.to_user,))
                 res_to = cursor.fetchone()
-                
+
                 if not res_to:
                      print(f"Error: Destination user '{transaction.to_user}' not found.")
                      return False
@@ -112,15 +114,15 @@ def create_transaction(transaction: TransactionCreate, balance_after: float) -> 
                 # Insert using the IDs
                 cursor.execute(
                     """
-                    INSERT INTO transactions 
+                    INSERT INTO transactions
                     (from_user_id, to_user_id, amount, type, description, balance_after)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     """,
                     (
-                        from_user_id, 
-                        to_user_id, 
+                        from_user_id,
+                        to_user_id,
                         transaction.amount,
-                        transaction.type, 
+                        transaction.type,
                         transaction.description,
                         balance_after
                     )
