@@ -73,8 +73,8 @@ class User:
         """
         try:
             return bcrypt.checkpw(
-                password.encode('utf-8'),
-                self.hashed_password.encode('utf-8')
+                password.encode('utf-8'),            # Password that the user provides (converted to bytes)
+                self.hashed_password.encode('utf-8') # Password that is stored in the DB (converted to bytes)
             )
         except Exception:
             return False
@@ -82,6 +82,9 @@ class User:
     @staticmethod
     def hash_password(password: str) -> str:
         """Utility method to hash the password using bcrypt."""
+        # 1. Convert the string to bytes (.encode)
+        # 2. Generate a random salt (gensalt)
+        # 3. Generate the hash and convert it back to a string (.decode) to save it in the DB
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     def update_email(self, new_email: str):
