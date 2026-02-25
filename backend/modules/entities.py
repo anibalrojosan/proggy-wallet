@@ -9,7 +9,7 @@ from backend.modules.models import UserInDB
 
 
 class Account:
-    """
+    """ 
     Represents a financial account belonging to a user.
     This entity encapsulates the balance and the business rules for modifying it.
     """

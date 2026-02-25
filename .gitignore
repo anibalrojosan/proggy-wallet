@@ -29,10 +29,6 @@ backend/data/*.json
 .env
 
 # Scripts and extra files
-migrate_passwords.py
 SPRINTS.md
 improvements.md
-
-# Database tests
-test_db.py
-test_db_create_tables.sql
+scripts/
