@@ -1,53 +1,55 @@
 """
-User authentication service for credential validation and user management.
-This service is responsible for:
-- Loading user data from the JSON file
-- Validating credentials using the models
-- Returning a UserEntity object
+Authentication Service.
+Handles user login and credential validation using the database repository.
 """
-import json
 
-from backend.modules.entities import User as UserEntity
-from backend.modules.models import UserInDB
+from backend.database.repository import get_user_by_username
+from backend.modules.entities import User
 
-# Archivo de persistencia
-USERS_FILE = "backend/data/users.json"
 
 class AuthService:
-    """Service responsible for authentication logic and user management."""
-
     @staticmethod
-    def _load_users_data() -> list[dict]:
-        """Private method to load raw data from the JSON file."""
-        try:
-            with open(USERS_FILE, encoding="utf-8") as f:
-                data = json.load(f)
-                return data.get("users", [])
-        except (FileNotFoundError, json.JSONDecodeError):
-            return []
+    def authenticate(username: str, password: str) -> User | None:
+        """
+        Authenticate a user by checking credentials against the database.
 
-    @classmethod
-    def get_user_entity(cls, username: str) -> UserEntity | None:
-        """Find a user and return it as a business entity (UserEntity)."""
-        users = cls._load_users_data()
-        for user_dict in users:
-            if user_dict.get("username") == username:
-                # Validate the dictionary with the Pydantic model
-                user_model = UserInDB(**user_dict)
-                # Return the business entity that wraps the model
-                return UserEntity(user_model)
-        return None
+        Args:
+            username: The username to check.
+            password: The plain-text password to validate.
+        Returns:
+            A User entity object if successful, None otherwise.
+        """
+        # 1. Get the user from the database through the repository
+        user_data = get_user_by_username(username)
 
-    @classmethod
-    def authenticate(cls, username: str, password: str) -> UserEntity | None:
-        """Validate credentials and return the entity if successful."""
-        user_entity = cls.get_user_entity(username)
-
-        if not user_entity:
+        if not user_data:
             return None
 
-        # Use the check_password method implemented in UserEntity
+        # 2. Convert the data (UserInDB) into a User entity
+        # This allows us to use the check_password method of the entity
+        user_entity = User(user_data)
+
+        # 3. Validate the password using the bcrypt logic encapsulated in User
         if user_entity.check_password(password):
             return user_entity
 
         return None
+
+    @staticmethod
+    def get_user_entity(username: str) -> User | None:
+        """
+        Helper to get a full User entity object from a username.
+        """
+        user_data = get_user_by_username(username)
+        if user_data:
+            return User(user_data)
+        return None
+
+
+def validate_credentials(username, password):
+    user = AuthService.authenticate(username, password)
+    return user is not None
+
+def get_user(username):
+    # Retorna el modelo UserInDB para mantener compatibilidad con código antiguo
+    return get_user_by_username(username)

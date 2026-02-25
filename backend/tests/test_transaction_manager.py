@@ -1,7 +1,10 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from backend.modules.entities import Account
 from backend.modules.services import TransactionManager
+
 
 @pytest.fixture
 def manager():
@@ -19,9 +22,9 @@ def test_transfer_success(manager, acc_a, acc_b):
     """Verify that a successful transfer calls the repository functions correctly."""
     with patch("backend.modules.services.update_user_balance") as mock_update, \
          patch("backend.modules.services.create_transaction") as mock_create:
-        
+
         manager.execute_transfer(acc_a, acc_b, 30.0)
-        
+
         assert acc_a.balance == 70.0
         assert acc_b.balance == 80.0
         # Should call update_user_balance 2 times (once for each account)

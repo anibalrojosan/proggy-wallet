@@ -1,21 +1,21 @@
 from psycopg2.extras import RealDictCursor
 
 from backend.database.connection import get_db_connection, get_db_cursor
-from backend.modules.models import Transaction, TransactionCreate, User
+from backend.modules.models import Transaction, TransactionCreate, UserInDB
 
 
 # ------------READ OPERATIONS------------
 # This functions use get_db_cursor that internally handles its own connection.
-def get_user_by_username(username: str) -> User | None:
+def get_user_by_username(username: str) -> UserInDB | None:
     '''Get a user by their username and return it as a User model'''
-    query = "SELECT * FROM users WHERE username = %s"
+    query = "SELECT id, username, email, balance, password_hash as password FROM users WHERE username = %s"
 
     try:
         with get_db_cursor() as cursor:
             cursor.execute(query, (username,))
             result = cursor.fetchone()
             if result:
-                return User(**result)
+                return UserInDB(**result)
             return None
     except Exception as e:
         print(f"Error getting user: {e}")

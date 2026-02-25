@@ -27,6 +27,7 @@ backend/data/*.csv
 backend/data/*.json
 !backend/data/.gitkeep
 .env
+.coverage
 
 # Scripts and extra files
 SPRINTS.md

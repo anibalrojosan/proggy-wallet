@@ -6,6 +6,8 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🚀 Phase 2: Professionalization & Database integration
+- [[2026-02-25] - Phase 2: Architectural Refactoring and SQL Integration (Sprint 19)](#2026-02-25---phase-2-architectural-refactoring-and-sql-integration-sprint-19)
+- [[2026-02-24] - Phase 2: Testing Infrastructure and Core Logic (Sprint 19)](#2026-02-24---phase-2-testing-infrastructure-and-core-logic-sprint-19)
 - [[2026-02-18] - Phase 2: Data Access Layer - Writing (Sprint 18)](#2026-02-18---phase-2-data-access-layer---writing-sprint-18)
 - [[2026-02-18] - Deep Dive: Database integration debugging session (Sprint 18)](#2026-02-18---deep-dive-database-integration-debugging-session-sprint-18)
 - [[2026-02-18] - Phase 2: Data Access Layer - Reading (Sprint 17)](#2026-02-18---phase-2-data-access-layer---reading-sprint-17)
@@ -34,6 +36,57 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+Here are the devlog entries in English, following the structure and technical details you requested:
+
+---
+
+### **[2026-02-25] - Phase 2: Architectural Refactoring and SQL Integration (Sprint 19)**
+
+**Activities:**
+*   **Persistence Migration:** Completed the transition from flat files (CSV/JSON) to PostgreSQL in the Service and Authentication layers.
+*   **Transaction Engine Refactor:** The `TransactionManager` now coordinates persistence directly with the SQL repository, including manual in-memory rollback logic to ensure consistency.
+*   **Test Suite Consolidation:** Reached an "all green" state with 25 passing tests, covering the financial and security core.
+
+**Detailed Changes:**
+
+1.  **`backend/modules/auth.py`**
+    *   **Change:** Completely refactored to remove the dependency on `load_users()` (which read from a JSON file).
+    *   **Reason:** It now utilizes the database repository and the `AuthService` class to centralize login logic.
+2.  **`backend/database/repository.py`**
+    *   **Change:** Adjusted the `get_user_by_username` function to return a `UserInDB` object instead of a raw dictionary. Added the SQL alias `password_hash as password`.
+    *   **Reason:** To ensure the data coming from the DB perfectly matches the requirements of Pydantic models and the `User` class.
+3.  **`backend/modules/entities.py`**
+    *   **Change:** Updated the `User` class constructor (`__init__`) to accept the `UserInDB` model and access its attributes using dot notation (`model.username`) instead of dictionary keys.
+    *   **Reason:** To leverage strong typing and ensure the entity is always created with validated data.
+4.  **`backend/tests/test_auth_service.py`**
+    *   **Change:** Created this file from scratch (and refined it through iterations) to test the new `AuthService`.
+    *   **Reason:** It replaces legacy tests by using "Mocks" to simulate the database, allowing unit tests to run without requiring a live Docker container.
+5.  **`backend/tests/test_auth.py` and `backend/tests/test_wallet.py`**
+    *   **Change:** Deleted.
+    *   **Reason:** These were obsolete files causing errors because they pointed to functions and files (JSON/CSV) that no longer exist in the current architecture.
+6.  **`backend/modules/services.py`**
+    *   **Change:** Cleaned up imports and removed the duplicate `AuthService` class (which now resides in `auth.py`).
+    *   **Reason:** To maintain consistency and prevent the `ImportError` encountered during testing.
+
+---
+
+**Next Steps:**
+With the core logic tested and SQL persistence integrated, the project is ready for **Phase 3: API & Web Interface**. The next milestone will be creating API endpoints using FastAPI.
+
+---
+
+### **[2026-02-24] - Phase 2: Testing Infrastructure and Core Logic (Sprint 19)**
+
+**Activities:**
+*   **Environment Setup:** Installed and configured `pytest`, `pytest-mock`, and `pytest-cov` using `uv`.
+*   **Entity Unit Testing:** Implemented `backend/tests/test_entities.py` to validate the financial logic of `Account` (deposits, withdrawals, insufficient funds) and user management.
+*   **Model Validation:** Created `backend/tests/test_models.py` to ensure `Pydantic` blocks invalid data (negative amounts, incorrect transaction types).
+*   **Code Quality:** Initial linting and formatting pass with `Ruff` to standardize the style of the new test files.
+
+---
 
 ## [2026-02-18] - Phase 2: Data Access Layer - Writing (Sprint 18)
 
