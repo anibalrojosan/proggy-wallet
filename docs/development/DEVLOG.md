@@ -6,6 +6,8 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🚀 Phase 2: Professionalization & Database integration
+- [[2026-02-26] - Phase 2: System Integration & API Refactoring (Sprint 20)](#2026-02-26---phase-2-system-integration--api-refactoring-sprint-20)
+- [[2026-02-26] - Review: Model Hydration and API Serialization Flow](#2026-02-26---review-model-hydration-and-api-serialization-flow)
 - [[2026-02-25] - Phase 2: Architectural Refactoring and SQL Integration (Sprint 19)](#2026-02-25---phase-2-architectural-refactoring-and-sql-integration-sprint-19)
 - [[2026-02-24] - Phase 2: Testing Infrastructure and Core Logic (Sprint 19)](#2026-02-24---phase-2-testing-infrastructure-and-core-logic-sprint-19)
 - [[2026-02-18] - Phase 2: Data Access Layer - Writing (Sprint 18)](#2026-02-18---phase-2-data-access-layer---writing-sprint-18)
@@ -39,7 +41,53 @@ It is a living document that will be updated as the project evolves.
 
 ---
 
-Here are the devlog entries in English, following the structure and technical details you requested:
+
+### **[2026-02-26] - Phase 2: System Integration & API Refactoring (Sprint 20)**
+
+#### **Task: Sprint 20 - System Integration & API Refactoring (Phase 1/2)**
+**Status:** In Progress (Backend Refactoring Completed)
+
+Today I completed the full refactoring of `backend/app.py` to transition the API from the legacy procedural file-based architecture to the new Object-Oriented and Database-driven design.
+
+#### **Key Accomplishments:**
+1.  **Decoupling Legacy Logic:** Removed all dependencies on the old `wallet.py` module. The API now communicates exclusively with the **Domain Entities** (`User`, `Account`) and the **Service Layer** (`TransactionManager`).
+2.  **Security Hardening:** Implemented Pydantic models for API responses. By using a `UserResponse` alias, I ensured that sensitive data (like password hashes) is filtered out before reaching the client.
+3.  **Frontend Compatibility:** Maintained the structure of JSON responses (e.g., wrapping results in a `transaction` dictionary) to ensure the existing JavaScript frontend remains fully functional without modifications.
+4.  **Robust Error Handling:** Standardized exception handling by separating **Business Logic Errors** (400 Bad Request) from **Technical Failures** (500 Internal Server Error), improving both security and user experience.
+
+---
+
+### **[2026-02-26] - Review: Model Hydration and API Serialization Flow**
+
+To ensure data integrity and a clean separation of concerns, I implemented a **Model Hydration and API Serialization Flow**. This process describes how raw data is transformed into a validated API response (a Pydantic model):
+
+1.  **Data Fetching (Extraction):**
+    *   The Database Repository executes SQL queries against PostgreSQL.
+    *   Using **`RealDictCursor`**, the raw database rows are fetched as native Python dictionaries (`dict`). This is the first step in turning "dead" binary data into usable structures.
+
+2.  **Model Hydration (Validation):**
+    *   The raw dictionary is injected into a Pydantic model using **Unpacking** (`Transaction(**row)`).
+    *   **"Hydration"** is the process of turning a flat data structure into a "live" object. Pydantic validates data types, enforces constraints (e.g., `amount > 0`), and ensures the object is consistent with our system's rules.
+
+3.  **Domain Mapping (Abstraction):**
+    *   The Repository returns a list of these hydrated `Transaction` objects.
+    *   This provides a layer of **Persistence Abstraction**, meaning the API layer doesn't need to know about SQL or tables—it only works with high-level Domain Objects.
+
+4.  **JSON Serialization (Delivery):**
+    *   FastAPI receives the Pydantic objects and performs **Serialization**.
+    *   Complex Python types (like `datetime` or `Decimal`) are converted into standard JSON strings (ISO 8601 for dates). This ensures the frontend receives a clean, predictable JSON payload.
+
+This flow is implemented in the `backend/app.py` file, partticularly in the wallet/history endpoint. It's useful to review this data flow to understand how the data is transformed into a validated API response:
+
+```mermaid
+flowchart LR
+    A[DB<br/>Query] --> B[Raw<br/>Dict]
+    B --> C[Pydantic<br/>Model via<br/>Unpacking]
+    C --> D[List of<br/>'Transactions'<br/>objects]
+    D --> E[FastAPI<br/>Serialization]
+    E --> F[JSON<br/>response]
+    F --> G[Frontend]
+```
 
 ---
 

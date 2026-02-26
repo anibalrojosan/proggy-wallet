@@ -50,7 +50,7 @@ def get_transactions_by_user(username: str) -> list[Transaction]:
     transactions = []
     try:
         with get_db_cursor() as cursor:
-            # Pasamos 'username' 3 veces: para el SELECT (owner) y para el WHERE (OR)
+            # Pass 'username' 3 times: for the SELECT (owner) and for the WHERE (OR)
             cursor.execute(query, (username, username, username))
             results = cursor.fetchall()
 
