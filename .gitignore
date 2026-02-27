@@ -32,4 +32,4 @@ backend/data/*.json
 # Scripts and extra files
 SPRINTS.md
 improvements.md
-scripts/
+test_scripts/
