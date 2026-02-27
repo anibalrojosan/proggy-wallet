@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from backend.database.repository import get_transactions_by_user
+from backend.database.repository import get_transactions_by_user, get_all_usernames
 from backend.modules.auth import AuthService
 from backend.modules.models import User as UserResponse
 from backend.modules.services import TransactionManager
@@ -181,3 +181,21 @@ async def get_history(username: str):
         # Technical error
         print(f"Error getting the history: {e}")
         raise HTTPException(status_code=500, detail="Error getting the history. Please try again later.")
+
+@app.get("/wallet/contacts/{username}")
+async def get_contacts(username: str):
+    """
+    Route to get the list of all usernames (contacts) for transaction purposes
+    """
+    try:
+        all_usernames = get_all_usernames()
+        contacts = [username_name for username_name in all_usernames if username_name != username]
+
+        return {
+            "status": "success",
+            "contacts": contacts
+        }
+        
+    except Exception as e:
+        print(f"Error getting contacts: {e}")
+        raise HTTPException(status_code=500, detail="Error getting contacts. Please try again later.")

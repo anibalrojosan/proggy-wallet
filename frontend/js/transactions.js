@@ -64,7 +64,7 @@ $(document).ready(async function() {
                     <tr>
                         <td class="small text-muted">${dateFormatted}</td>
                         <td><i class="bi ${typeIcon} ${typeClass}"></i> ${typeText}</td>
-                        <td>${t.counterparty}</td>
+                        <td>${counterparty}</td>
                         <td class="fw-bold ${typeClass}">${t.type === 'transfer_out' ? '-' : '+'}$${parseFloat(t.amount).toFixed(2)}</td>
                         <td class="text-muted">$${parseFloat(t.balance).toFixed(2)}</td>
                     </tr>

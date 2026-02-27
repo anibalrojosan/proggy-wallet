@@ -11,31 +11,49 @@ $(document).ready(async function() {
     $('#userGreeting').text(`Hello, ${username}`);
     await refreshBalance();
 
-    // Later, we will get the contacts from the backend
-    const contacts = [
-        { username: 'user2', name: 'User 2' },
-        { username: 'admin', name: 'System Admin' }
-    ];
-    loadContacts();
+    // Initial load: Balance and Contacts
+    await Promise.all([
+        refreshBalance(),
+        loadContacts()
+    ]);
 
     async function refreshBalance() {
-        const response = await fetch(`http://localhost:8000/wallet/status/${username}`);
-        const data = await response.json();
-        if (response.ok) {
-            $('#currentBalanceDisplay').text(`$${data.balance.toFixed(2)}`);
-            return data.balance;
+        try {
+            const response = await fetch(`http://localhost:8000/wallet/status/${username}`);
+            const data = await response.json();
+            if (response.ok) {
+                $('#currentBalanceDisplay').text(`$${data.balance.toFixed(2)}`);
+                return data.balance;
+            }
+        } catch (error) {
+            console.error("Error refreshing balance:", error);
         }
         return 0;
     }
 
-    function loadContacts() {
+    async function loadContacts() {
         const $select = $('#recipientSelect');
-        contacts.forEach(contact => {
-            // Don't show the current user in the contact list
-            if (contact.username !== username) {
-                $select.append(`<option value="${contact.username}">${contact.name} (@${contact.username})</option>`);
+        $select.empty().append('<option value="">Choose a recipient...</option>');
+        
+        try {
+            // New endpoint that returns all registered users
+            const response = await fetch(`http://localhost:8000/wallet/contacts/${username}`);
+            const data = await response.json();
+            
+            if (response.ok && data.contacts) {
+                data.contacts.forEach(contactName => {
+                    // Don't show the current user in the list
+                    if (contactName !== username) {
+                        $select.append(`<option value="${contactName}">${contactName}</option>`);
+                    }
+                });
+            } else {
+                console.error("Failed to load contacts:", data.detail);
             }
-        });
+        } catch (error) {
+            console.error("Connection error loading contacts:", error);
+            showMessage("Error loading contacts from server", "alert-danger");
+        }
     }
 
     // 3. Handle the transfer form
@@ -69,23 +87,25 @@ $(document).ready(async function() {
             if (response.ok) {
                 showMessage(`Successfully sent $${amount.toFixed(2)}!`, "alert-success");
                 
-                // Update the balance with the real data that the transfer returns
-                // transaction.balance is the new balance after the transfer (.transfer() returns transfer_out (transactions of sender))
+                // Update balance using the transction object returned by the API
                 $('#currentBalanceDisplay').fadeOut(200, function() {
                     $(this).text(`$${parseFloat(result.transaction.balance).toFixed(2)}`).fadeIn(200);
                 });
+
+                // Clear form
                 $('#transferAmount').val('');
                 $('#recipientSelect').val('');
             } else {
-                // Here we capture the error of "Insufficient balance" that we sent from the backend
+                // Show business logic error (e.g. insufficient funds)
                 showMessage(result.detail || "Transfer failed", "alert-danger");
             }
         } catch (error) {
-            showMessage("Connection error", "alert-danger");
+            console.error("Error sending transfer:", error);
+            showMessage("Connection error with server", "alert-danger");
         }
     });
 
-    // Show messages (same function as in deposit.js)
+    // Helper: Show messages (success or error)
     function showMessage(text, className) {
         const $message = $('#messageContainer');
         $message.text(text)

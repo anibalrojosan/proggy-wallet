@@ -44,8 +44,7 @@ It is a living document that will be updated as the project evolves.
 
 ### **[2026-02-26] - Phase 2: System Integration & API Refactoring (Sprint 20)**
 
-#### **Task: Sprint 20 - System Integration & API Refactoring (Phase 1/2)**
-**Status:** In Progress (Backend Refactoring Completed)
+#### **Task 1 : Sprint 20 - System Integration & API Refactoring (1/2)**
 
 Today I completed the full refactoring of `backend/app.py` to transition the API from the legacy procedural file-based architecture to the new Object-Oriented and Database-driven design.
 
@@ -54,6 +53,21 @@ Today I completed the full refactoring of `backend/app.py` to transition the API
 2.  **Security Hardening:** Implemented Pydantic models for API responses. By using a `UserResponse` alias, I ensured that sensitive data (like password hashes) is filtered out before reaching the client.
 3.  **Frontend Compatibility:** Maintained the structure of JSON responses (e.g., wrapping results in a `transaction` dictionary) to ensure the existing JavaScript frontend remains fully functional without modifications.
 4.  **Robust Error Handling:** Standardized exception handling by separating **Business Logic Errors** (400 Bad Request) from **Technical Failures** (500 Internal Server Error), improving both security and user experience.
+
+#### **Task 2: Sprint 20 - Frontend Integration & Dynamic User Directory (2/2)**
+
+I have finalized the frontend integration, ensuring that all views are now consuming real-time data from the PostgreSQL database through the refactored API.
+
+#### **Key Accomplishments:**
+1.  **Dynamic User Directory:** Replaced the hardcoded contact list in `sendmoney.js` with a new `get_contacts` endpoint. The application now implements a **Full User Directory** flow, allowing users to send money to any registered account in the system.
+2.  **Transaction History Fix:** Resolved a compatibility issue in `transactions.js` where the "Counterparty" column was showing `undefined`. The logic now dynamically calculates the counterparty (sender or receiver) based on the transaction type (`transfer_in`/`transfer_out`).
+3.  **UI/UX Robustness:** Updated `sendmoney.js` to load balance and contacts in parallel using `Promise.all`, improving page load performance and ensuring the UI always reflects the current database state.
+4.  **E2E Verification:** Confirmed that the full user journey (Login -> Dashboard -> Deposit -> Transfer -> History) is consistent on the web interface and the database is updated accordingly.
+
+#### **Technical Note: Dynamic UI Hydration**
+The frontend now follows a **Dynamic UI Hydration** pattern, where static HTML templates are populated with real-time data from the API. This ensures that any changes in the database (like a new user registering) are immediately reflected in the UI for all other users without requiring manual updates to the frontend code.
+
+Sprint 20 is now complete and the project is ready for the next phase: **Enterprise Ecosystem (Web Framework)** where the project will be refactored to use the Django Framework.
 
 ---
 

@@ -132,3 +132,18 @@ def create_transaction(transaction: TransactionCreate, balance_after: float) -> 
     except Exception as e:
         print(f"Error creating transaction: {e}")
         return False
+
+
+def get_all_usernames() -> list[str]:
+    '''Get the list of all usernames in the database'''
+    query = "SELECT username FROM users ORDER BY username ASC"
+    usernames = []
+    try:
+        with get_db_cursor() as cursor:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            usernames = [row['username'] for row in results]
+        return usernames
+    except Exception as e:
+        print(f"Error getting all usernames: {e}")
+        return []
