@@ -5,7 +5,13 @@ It is a living document that will be updated as the project evolves.
 
 ## 📑 Index
 
+### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-04] - Review: Phase 2 Recap - Architectural Evolution](#2026-03-04---review-phase-2-recap---architectural-evolution)
+
 ### 🚀 Phase 2: Professionalization & Database integration
+<details>
+  <summary>Click to view Phase 2 Sprints (Feb 2026)</summary>
+  
 - [[2026-02-26] - Phase 2: System Integration & API Refactoring (Sprint 20)](#2026-02-26---phase-2-system-integration--api-refactoring-sprint-20)
 - [[2026-02-26] - Review: Model Hydration and API Serialization Flow](#2026-02-26---review-model-hydration-and-api-serialization-flow)
 - [[2026-02-25] - Phase 2: Architectural Refactoring and SQL Integration (Sprint 19)](#2026-02-25---phase-2-architectural-refactoring-and-sql-integration-sprint-19)
@@ -21,6 +27,7 @@ It is a living document that will be updated as the project evolves.
 - [[2026-02-11] - Phase 2: Core entities & security layer (Sprint 14)](#2026-02-11---phase-2-core-entities--security-layer-sprint-14)
 - [[2026-02-10] - Phase 2: Initiation & data modeling (sprint 13)](#2026-02-10---phase-2-initiation--data-modeling-sprint-13)
 - [[2026-02-10] - Review: Data Integrity with DTOs & Pydantic](#2026-02-10---review-data-integrity-with-dtos--pydantic)
+</details>
 
 ### 🏗️ Phase 1: MVP & Foundations
 <details>
@@ -41,6 +48,43 @@ It is a living document that will be updated as the project evolves.
 
 ---
 
+### **[2026-03-04] - Review: Phase 2 Recap - Architectural Evolution**
+
+Since **Phase 2** it's completed, I decided to recap how the application evolved from a simple procedural prototype to a robust, layered system before moving to the next phase (Django). This entry serves as a technical review of the architectural patterns implemented and the rationale behind them.
+
+#### **1. From Procedural to Layered Architecture**
+
+In Phase 1, the logic was "flat": functions directly manipulated CSV/JSON files and handled HTTP requests in a single flow. In Phase 2, **Separation of Concerns (SoC)** was introduced by dividing the system into specialized layers:
+
+| Layer | Component | Location | Responsibility |
+| :--- | :--- | :--- | :--- |
+| **API / Controller** | FastAPI Routes | `app.py` | Handles HTTP, parses requests, and delegates to services. |
+| **Service / Orchestration** | `TransactionManager` | `services.py` | Coordinates complex business processes (e.g., transfers) across multiple entities. |
+| **Domain / Business** | `User`, `Account` | `entities.py` | Contains the "Golden Rules" of the business. Pure Python logic. |
+| **Persistence / Repo** | `Repository` | `repository.py` | Mediates between the Domain and PostgreSQL. Handles SQL queries. |
+| **Validation / Schema** | Pydantic Models | `models.py` | Defines data contracts and ensures integrity at the system boundaries. |
+
+#### **2. Role of Each Layer**
+
+*   **Schemes (Pydantic):** These act as "guards" at the gates of our application. They ensure that any data entering (from the API) or leaving (to the frontend) is valid. They prevent "dirty data" from reaching our core logic.
+*   **Entities (Domain Objects):** An entity is a class that represents a real-world object in the domain of the application. Here the business logic is implemented. Unlike "Anemic Models" (objects that are just bags of data), the `Account` and `User` entities have behavior. An `Account` knows how to `add_funds()` or `remove_funds()`, protecting its own **Invariants** (e.g., balance cannot be negative).
+*   **Repositories:** A repository is a provides an interface that connects the app to the database. This pattern allows to decouple the business logic from the storage technology. The `TransactionManager` doesn't know it's talking to PostgreSQL; it just asks the `Repository` to "save this transaction" and the `Repository` handles the SQL queries. This makes the system highly maintainable.
+*   **Service Layer:** Some operations don't belong to a single entity. A service is a class that orchestrates the execution of multiple entities. A transfer involves two accounts and a persistence step. The `TransactionManager` (Service) orchestrates this dance, ensuring **Atomicity** (all-or-nothing execution).
+
+#### **3. Why This Design?**
+
+1.  **Maintainability:** By isolating logic into files like `entities.py` or `repository.py`, it's easy to know exactly where to go when a bug appears.
+2.  **Testability:** It's possible to test the business logic in isolation using **Mocks** for the database. This is why there's a robust suite in `backend/tests/`.
+3.  **Scalability:** Adding a new feature (like "Savings Goals") only requires adding a new entity and a repository method, without touching the existing transfer logic.
+4.  **Future-Proofing for Django:** Django is a "heavy" framework. By having the business logic already encapsulated in clean Python classes, porting it to Django's MVT (Model-View-Template) will be a matter of mapping the existing entities to Django Models and the services to Django Views.
+
+#### **4. Technical Summary: The "Clean Code" Evolution**
+
+The idea of these phase was to move from **Implicit Logic** (hidden in scripts) to **Explicit Architecture**. **Domain-Driven Design (DDD)** principles were implemented, ensuring that the code speaks the language of finance (`Account`, `Transaction`) rather than the language of technology (`JSON`, `CSV`, `Loop`).
+
+This foundation aims to make `Proggy Wallet` a professional-grade application rather than just a coding exercise.
+
+---
 
 ### **[2026-02-26] - Phase 2: System Integration & API Refactoring (Sprint 20)**
 
