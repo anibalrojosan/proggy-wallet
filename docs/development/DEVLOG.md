@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-04] - Sprint 21: Django 6 Migration and Initialization](#2026-03-04---sprint-21-django-6-migration-and-initialization)
 - [[2026-03-04] - Review: Phase 2 Recap - Architectural Evolution](#2026-03-04---review-phase-2-recap---architectural-evolution)
 
 ### 🚀 Phase 2: Professionalization & Database integration
@@ -45,6 +46,22 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-04] - Sprint 21: Django 6 Migration and Initialization
+
+### Completed:
+- **Framework Initialization:** Migrated the backend from FastAPI to Django 6.0.3 as the foundation for the monolithic architecture (MVT).
+- **Dependency Management:** Configured `django`, `psycopg2-binary`, and `django-environ` using `uv`.
+- **Security & Configuration:** Implemented `django-environ` to handle sensitive credentials (PostgreSQL, SECRET_KEY) through a protected `.env` file.
+- **Database:** Established a successful connection with the PostgreSQL Docker container (port 5433). Executed initial Django migrations (`auth`, `sessions`, `admin`).
+- **Folder Structure:** Created base directories `static/` and `templates/` with `.gitkeep` files for Git persistence.
+- **Verification:** Created a superuser and successfully verified the Django admin panel.
+
+### Technical Notes:
+- Resolved a `Connection refused` error by ensuring the Docker container was running.
+- Fixed a Docker Compose warning regarding special characters in the `SECRET_KEY` by wrapping it in single quotes in the `.env` file.
 
 ---
 
