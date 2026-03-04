@@ -107,7 +107,7 @@ This document provides a comprehensive overview of the project's evolution, from
 - 🗺️ **[ROADMAP](docs/ROADMAP.md)**: Our path from prototype to production.
 - 🏗️ **[ARCHITECTURE](docs/ARCHITECTURE.md)**: Deep dive into our system design and ADRs.
 
-## Project Structure
+## Project Structure (Phase 2)
 ```text
 proggy-wallet/
 ├── backend/
