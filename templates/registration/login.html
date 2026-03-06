@@ -22,21 +22,25 @@
                         </div>
 
                         <!-- Login Form -->
-                        <form id="loginForm">
+                        <form method="post">
+                            {% csrf_token %}
+
                             <div class="mb-3">
-                                <label for="username" class="form-label">Username</label>
-                                <input type="text" class="form-control" id="username" placeholder="Enter your username">
+                                <label for="id_username" class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" id="id_username" placeholder="Enter your username" required >
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" placeholder="Enter your password">
+                                <label for="id_password" class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" id="id_password" placeholder="Enter your password" required >
                             </div>
                             
                             <!-- Error Message Container -->
-                            <div id="errorMessage" class="alert alert-danger d-none" role="alert">
-                                Please fill in all fields.
+                            {% if form.errors %}
+                            <div class="alert alert-danger d-none" role="alert">
+                                Your username and password didn't match. Please try again.
                             </div>
-
+                            {% endif %}
+                            
                             <button type="submit" class="btn btn-primary w-100 btn-lg mt-3">Login</button>
                         </form>
                     </div>

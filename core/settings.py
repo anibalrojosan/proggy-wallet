@@ -123,3 +123,14 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+
+# Login and logout redirect URLs
+LOGIN_REDIRECT_URL = 'menu'
+LOGOUT_REDIRECT_URL = 'login'
+
+# Password hashers
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
