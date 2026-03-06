@@ -6,7 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
-- [[2026-03-06] - Sprint 23: Authentication System Migration](#2026-03-06---sprint-23-authentication-system-migration)
+- [[2026-03-06] - Sprint 23 & 24: Authentication System, View and Template Migration](#2026-03-06---sprint-23--24-authentication-system-view-and-template-migration)
 - [[2026-03-05] - Sprint 22: Django Model Definition and ORM Migration](#2026-03-05---sprint-22-django-model-definition-and-orm-migration)
 - [[2026-03-04] - Sprint 21: Django 6 Migration and Initialization](#2026-03-04---sprint-21-django-6-migration-and-initialization)
 - [[2026-03-04] - Review: Phase 2 Recap - Architectural Evolution](#2026-03-04---review-phase-2-recap---architectural-evolution)
@@ -51,7 +51,9 @@ It is a living document that will be updated as the project evolves.
 
 ---
 
-## [2026-03-06] - Sprint 23: Authentication System Migration
+## [2026-03-06] - Sprint 23 & 24: Authentication System, View and Template Migration
+
+### **Task 1:** Sprint 23 - Authentication System Migration (1/2)
 
 ### Context & Goals
 The goal of this sprint was to replace the legacy manual authentication system with Django's native `django.contrib.auth` framework. This ensures professional-grade security, session management, and a robust foundation for future user-related features.
@@ -67,10 +69,30 @@ The goal of this sprint was to replace the legacy manual authentication system w
 ### 💡 Deep Dive: Django Auth & Password Hashing
 Django's authentication system is "batteries-included" but highly flexible. I configured `PASSWORD_HASHERS` in `settings.py` to include `BCryptSHA256PasswordHasher`. This allows the system to validate legacy BCrypt hashes and automatically upgrade them to the more modern `PBKDF2PasswordHasher` upon the user's first successful login, providing a seamless and secure migration path.
 
+### **Task 2:** Sprint 24 - View and Template Migration (2/2)
+
+### Context & Goals
+The objective of this sprint was to transition from static HTML files to a dynamic, server-side rendered frontend using the Django Template Language (DTL). This involved centralizing common UI elements and injecting real-time data from the database into the views.
+
+### Technical Implementation
+- **Template Inheritance**: Created `base.html` as a master layout to encapsulate shared components like the Navbar, Bootstrap 5 CDN, and global CSS/JS imports.
+- **Block Architecture**: Refactored `menu.html`, `deposit.html`, `sendmoney.html`, and `transactions.html` to extend `base.html` using `{% block content %}`.
+- **Static Files Management**: Implemented `{% load static %}` and the `{% static %}` tag to resolve 404 errors for local assets.
+- **Dynamic Data Injection**: Replaced hardcoded values with DTL variables such as `{{ user.account.balance }}` and `{{ user.username }}`.
+- **URL Reversal**: Switched static `href` links to dynamic Django routes using the `{% url %}` tag for better maintainability.
+- **View Logic**: Updated `wallet/views.py` to handle context data, including fetching transaction history and contact lists for transfers.
+
+### Problem found during testing: The "Missing Account" Migration Issue
+During testing, the user `anibal` showed a balance of `$0.00` despite having a transaction history. Investigation revealed that the `Account` record for this specific user was missing in the `wallet_account` table. 
+
+**Why it happened:** The migration script was designed to skip `User` creation if the username already existed in `auth_user` (to avoid overwriting existing superusers). Since the script only created an `Account` when it successfully created a new `User`, pre-existing users were left without a linked financial record.
+
+**The Solution:** I used the Django Shell to execute an idempotent `get_or_create` logic. I manually calculated the balance by aggregating the `Transaction` history (deposits - transfers) and then ensured the `Account` record existed and was synchronized with this calculated "source of truth".
+
 ### Next Steps
-- Implement dynamic data rendering in the dashboard using `{{ user.account.balance }}`.
-- Port "Deposit" and "Transfer" views to Django's Class-Based Views (CBVs) or functional views with `Forms`.
-- Replace remaining jQuery AJAX calls with standard Django POST submissions.
+- Implement `POST` request handling in `views.py` to process real financial transactions (Sprint 25).
+- Add `transaction.atomic()` to ensure data integrity during deposits and transfers.
+- Integrate Django Messages Framework for user feedback upon successful operations.
 
 ---
 
