@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-06] - Sprint 23: Authentication System Migration](#2026-03-06---sprint-23-authentication-system-migration)
 - [[2026-03-05] - Sprint 22: Django Model Definition and ORM Migration](#2026-03-05---sprint-22-django-model-definition-and-orm-migration)
 - [[2026-03-04] - Sprint 21: Django 6 Migration and Initialization](#2026-03-04---sprint-21-django-6-migration-and-initialization)
 - [[2026-03-04] - Review: Phase 2 Recap - Architectural Evolution](#2026-03-04---review-phase-2-recap---architectural-evolution)
@@ -47,6 +48,29 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-06] - Sprint 23: Authentication System Migration
+
+### Context & Goals
+The goal of this sprint was to replace the legacy manual authentication system with Django's native `django.contrib.auth` framework. This ensures professional-grade security, session management, and a robust foundation for future user-related features.
+
+### Technical Implementation
+- **URL Configuration**: Integrated `django.contrib.auth.urls` into `core/urls.py` to leverage built-in views for login and logout.
+- **Template Refactoring**: Moved and adapted `login.html` to `templates/registration/` using Django Template Language (DTL), including mandatory `{% csrf_token %}` for security.
+- **View Implementation**: Created a new `menu` view in `wallet/views.py` to display the user's dashboard. This view is protected by the `@login_required` decorator, ensuring that only authenticated users can access it. I also moved menu.html from `frontend/` to `templates/` to comply with Django's default template discovery mechanism. This centralizes all server-side rendered files and allows the render() function in `wallet/views.py` to resolve the dashboard template correctly.
+- **Security Middleware**: Configured `LOGIN_REDIRECT_URL` and `LOGOUT_REDIRECT_URL` in `settings.py` to manage post-auth navigation.
+- **Route Protection**: Applied the `@login_required` decorator to the `menu` view in `wallet/views.py` to enforce authorization.
+- **Data Migration**: Developed custom scripts `migrate_users_to_django.py` and `migrate_transactions_to_django.py` to port legacy BCrypt-hashed users and their history into the Django ORM.
+
+### 💡 Deep Dive: Django Auth & Password Hashing
+Django's authentication system is "batteries-included" but highly flexible. I configured `PASSWORD_HASHERS` in `settings.py` to include `BCryptSHA256PasswordHasher`. This allows the system to validate legacy BCrypt hashes and automatically upgrade them to the more modern `PBKDF2PasswordHasher` upon the user's first successful login, providing a seamless and secure migration path.
+
+### Next Steps
+- Implement dynamic data rendering in the dashboard using `{{ user.account.balance }}`.
+- Port "Deposit" and "Transfer" views to Django's Class-Based Views (CBVs) or functional views with `Forms`.
+- Replace remaining jQuery AJAX calls with standard Django POST submissions.
 
 ---
 
