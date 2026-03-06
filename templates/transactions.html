@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}My Movements - Proggy Wallet{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-clock-history"></i> My Movements</h2>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active" id="filterAll">All</button>
+            <button type="button" class="btn btn-outline-success" id="filterIncome">Income</button>
+            <button type="button" class="btn btn-outline-danger" id="filterExpenses">Expenses</button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="transactionsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="cursor: pointer;" id="sortDate">Date <i class="bi bi-arrow-down-up small"></i></th>
+                            <th>Type</th>
+                            <th>Contact / Info</th>
+                            <th>Amount</th>
+                            <th>Balance After</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody">
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <span class="badge {% if tx.type == 'deposit' %}bg-success{% elif tx.type == 'transfer' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ tx.type|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if tx.type == 'deposit' %}
+                                    Self (Deposit)
+                                {% elif tx.from_user == user %}
+                                    To: {{ tx.to_user.username }}
+                                {% else %}
+                                    From: {{ tx.from_user.username }}
+                                {% endif %}
+                            </td>
+                            <td class="{% if tx.from_user == user and tx.type != 'deposit' %}text-danger{% else %}text-success{% endif %}">
+                                {% if tx.from_user == user and tx.type != 'deposit' %}-{% else %}+{% endif %}${{ tx.amount }}
+                            </td>
+                            <td>-</td> 
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="bi bi-info-circle display-4 text-muted"></i>
+                                <p class="mt-2 text-muted">No movements found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

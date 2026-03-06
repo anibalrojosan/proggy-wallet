@@ -22,4 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('menu/', views.menu, name='menu'),
+    path('deposit/', views.deposit, name='deposit'),
+    path('transfer/', views.transfer, name='transfer'),
+    path('history/', views.history, name='history'),
 ]

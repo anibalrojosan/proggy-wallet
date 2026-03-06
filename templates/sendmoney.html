@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Transfer - Proggy Wallet{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-send-fill display-1 text-primary"></i>
+                        <h2 class="mt-2">Send Money</h2>
+                        <p class="text-muted">Transfer funds to your contacts instantly.</p>
+                    </div>
+
+                    <!-- Current Balance Display -->
+                    <div class="alert alert-secondary text-center" role="alert">
+                        Available Balance: <strong id="currentBalanceDisplay">${{ user.account.balance }}</strong>
+                    </div>
+
+                    <!-- Transfer Form -->
+                    <form method="post" id="transferForm">
+                        {% csrf_token %}
+                        <!-- Recipient Selection -->
+                        <div class="mb-3">
+                            <label for="recipientSelect" class="form-label">Choose a recipient</label>
+                            <select name="to_user" class="form-select form-select-lg" id="recipientSelect" required>
+                                <option value="" selected disabled>Select a contact to send money to...</option>
+                                {% for contact in contacts %}
+                                    <option value="{{ contact.id }}">{{ contact.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Amount Input -->
+                        <div class="mb-3">
+                            <label for="transferAmount" class="form-label">Amount to send ($)</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="amount" class="form-control" id="transferAmount" step="0.01" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100" id="btnTransfer">
+                            Confirm Transfer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
