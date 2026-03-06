@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-05] - Sprint 22: Django Model Definition and ORM Migration](#2026-03-05---sprint-22-django-model-definition-and-orm-migration)
 - [[2026-03-04] - Sprint 21: Django 6 Migration and Initialization](#2026-03-04---sprint-21-django-6-migration-and-initialization)
 - [[2026-03-04] - Review: Phase 2 Recap - Architectural Evolution](#2026-03-04---review-phase-2-recap---architectural-evolution)
 
@@ -46,6 +47,30 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-05] - Sprint 22: Django Model Definition and ORM Migration
+
+As part of Phase 3 (Django Migration), the primary goal for this sprint was to transition from the manual SQL/Pydantic data layer to **Django Models**. This ensures that the application leverages Django's "batteries-included" approach for database management, security, and administrative tools.
+
+### Technical Implementation
+- **Account Model:** Created a `OneToOneField` relationship with Django's built-in `User` model. This extends the default user profile to store financial data like `balance` using `DecimalField` for high precision.
+- **Transaction Model:** Implemented a robust ledger system using `ForeignKey` relationships. 
+    - Used `related_name` (`sent_transactions`, `received_transactions`) to enable clean reverse lookups from the `User` object.
+    - Configured `on_delete=models.SET_NULL` for audit trail persistence even if users are deleted.
+- **Django Admin:** Registered models in `admin.py` with optimized search capabilities using the `__` (double underscore) syntax for spanning relationships (e.g., `user__username`).
+- **Database Migrations:** Generated the initial migration file (`0001_initial.py`) to sync the new schema with the PostgreSQL container.
+
+### 💡 Deep Dive: Django Models Core Concepts
+
+During this sprint, I explored several fundamental Django mechanisms:
+
+*   **The `User` Model:** Instead of building a custom Auth table, we utilized `django.contrib.auth.models.User`. This provides industry-standard security for password hashing (PBKDF2) and session management out of the box.
+*   **The Magic of `related_name`:** This defines the **inverse relationship**. It allows the "Parent" model (`User`) to access its "Children" (`Account`/`Transaction`) without explicit modification. 
+    *   *Example:* `user.account.balance` or `user.sent_transactions.all()`.
+*   **Lookup Syntax (`__`):** Django's way of "drilling down" into relationships. In the Admin search fields, `user__username` tells Django to perform a SQL `JOIN` behind the scenes to find a user by their name rather than their ID.
+*   **Financial Integrity:** I used `DecimalField` over `FloatField` to eliminate binary rounding errors, ensuring that every cent in the **Proggy Wallet** is accounted for accurately.
 
 ---
 
