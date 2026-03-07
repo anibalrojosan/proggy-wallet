@@ -43,6 +43,6 @@ class TransferForm(forms.Form):
         # Check if the user has enough balance
         if self.user and self.user.account.balance < amount:
             raise forms.ValidationError(
-                f"Insufficient balance: Your current balance is ${self.user.account.balance:.2f}."
+                f" balance: Your current balance is ${self.user.account.balance:.2f}."
             )
         return amount

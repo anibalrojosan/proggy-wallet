@@ -20,25 +20,61 @@
                     </div>
 
                     <!-- Transfer Form -->
-                    <form method="post" id="transferForm">
+                    <form method="post" id="transferForm" novalidate>
                         {% csrf_token %}
+
+                        <!-- Form Errors -->
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+
                         <!-- Recipient Selection -->
                         <div class="mb-3">
-                            <label for="recipientSelect" class="form-label">Choose a recipient</label>
-                            <select name="to_user" class="form-select form-select-lg" id="recipientSelect" required>
+                            <label for="{{ form.to_user.id_for_label }}" class="form-label">Choose a recipient</label>
+                            <select name="{{ form.to_user.name }}" 
+                                    class="form-select form-select-lg {% if form.to_user.errors %}is-invalid{% endif %}" 
+                                    id="{{ form.to_user.id_for_label }}" 
+                                    required>
                                 <option value="" selected disabled>Select a contact to send money to...</option>
-                                {% for contact in contacts %}
-                                    <option value="{{ contact.id }}">{{ contact.username }}</option>
+                                {% for choice_id, choice_label in form.to_user.field.choices %}
+                                    {% if choice_id %}
+                                        <option value="{{ choice_id }}" {% if form.to_user.value|stringformat:"s" == choice_id|stringformat:"s" %}selected{% endif %}>
+                                            {{ choice_label }}
+                                        </option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
+                            {% if form.to_user.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.to_user.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Amount Input -->
                         <div class="mb-3">
-                            <label for="transferAmount" class="form-label">Amount to send ($)</label>
+                            <label for="{{ form.amount.id_for_label }}" class="form-label">Amount to send ($)</label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text">$</span>
-                                <input type="number" name="amount" class="form-control" id="transferAmount" step="0.01" placeholder="0.00" required>
+                                <input type="number" 
+                                       name="{{ form.amount.name }}" 
+                                       class="form-control {% if form.amount.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.amount.id_for_label }}" 
+                                       step="0.01" 
+                                       placeholder="0.00" 
+                                       value="{{ form.amount.value|default:'' }}"
+                                       required>
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.amount.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
 
