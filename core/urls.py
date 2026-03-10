@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 from wallet import views
 
 urlpatterns = [
@@ -24,5 +25,6 @@ urlpatterns = [
     path('menu/', views.menu, name='menu'),
     path('deposit/', views.deposit, name='deposit'),
     path('transfer/', views.transfer, name='transfer'),
-    path('history/', views.history, name='history'),
+    path('history/', views.TransactionHistoryView.as_view(), name='history'),
+    path('', lambda request: redirect('menu'), name='root_redirect'),
 ]

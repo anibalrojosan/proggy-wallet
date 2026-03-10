@@ -22,6 +22,7 @@ class Transaction(models.Model):
     type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    balance_after = models.DecimalField(max_digits=12, decimal_places=2, null=True)
 
     def __str__(self):
         return f'{self.type.capitalize()} - ${self.amount} ({self.created_at.strftime('%Y-%m-%d')})'
