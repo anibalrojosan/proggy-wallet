@@ -2,6 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 from .forms import DepositForm, TransferForm
 from .models import Transaction
@@ -29,6 +31,7 @@ def deposit(request):
                         to_user=request.user,
                         amount=amount,
                         type='deposit',
+                        balance_after=account.balance,
                         description='Deposit via web'
                     )
                 messages.success(request, f'Successfully deposited ${amount}!')
@@ -69,6 +72,7 @@ def transfer(request):
                         to_user=to_user,
                         amount=amount,
                         type='transfer',
+                        balance_after=from_account.balance,
                         description=f'Transfer to {to_user.username}'
                     )
                 messages.success(request, f'Successfully sent ${amount} to {to_user.username}!')
@@ -85,11 +89,35 @@ def transfer(request):
 
 @login_required
 def history(request):
-    # Fetch transactions where user is sender or receiver
-    transactions = Transaction.objects.filter(
-        from_user=request.user
-    ) | Transaction.objects.filter(
-        to_user=request.user
-    )
-    transactions = transactions.order_by('-created_at')
-    return render(request, 'transactions.html', {'transactions': transactions})
+    '''
+    View to display the user's transaction history. 
+    It uses the Django Paginator to divide the queryset into groups of 10 transactions.
+    '''
+    # Capture the filter type from the URL (e.g: ?filter=income)
+    filter_type = request.GET.get('filter')
+
+    # Filter the transactions where the user is the sender or receiver.
+    queryset = Transaction.objects.filter(
+        Q(from_user=request.user) | Q(to_user=request.user)
+    ).order_by('-created_at')
+
+    # Filter logic for the "My Movements" buttons
+    if filter_type == 'income':
+        queryset = queryset.filter(to_user=request.user)
+    elif filter_type == 'expense':
+        queryset = queryset.filter(from_user=request.user)
+
+    # Pagination: Divide the queryset into groups of 10 transactions.
+    paginator = Paginator(queryset, 10) 
+    
+    # Get the current page number from the URL (e.g: ?page=2)
+    page_number = request.GET.get('page')
+    
+    # Get the page object
+    page_obj = paginator.get_page(page_number)
+
+    # Return the 'page_obj' instead of 'transactions'
+    return render(request, 'transactions.html', {
+        'page_obj': page_obj,
+        'current_filter': filter_type  # Useful to highlight the active button in the frontend
+    })
