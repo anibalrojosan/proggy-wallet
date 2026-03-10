@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.core.paginator import Paginator
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 
 from .forms import DepositForm, TransferForm
@@ -87,37 +89,29 @@ def transfer(request):
 
     return render(request, 'sendmoney.html', {'form': form})
 
-@login_required
-def history(request):
-    '''
-    View to display the user's transaction history. 
-    It uses the Django Paginator to divide the queryset into groups of 10 transactions.
-    '''
-    # Capture the filter type from the URL (e.g: ?filter=income)
-    filter_type = request.GET.get('filter')
+class TransactionHistoryView(LoginRequiredMixin, ListView):
+    model = Transaction
+    template_name = 'transactions.html'
+    context_object_name = 'page_obj'
+    paginate_by = 10
 
-    # Filter the transactions where the user is the sender or receiver.
-    queryset = Transaction.objects.filter(
-        Q(from_user=request.user) | Q(to_user=request.user)
-    ).order_by('-created_at')
+    def get_queryset(self):
+        # Get the base queryset (all transactions of the user)
+        queryset = Transaction.objects.filter(
+            Q(from_user=self.request.user) | Q(to_user=self.request.user)
+        ).order_by('-created_at')
 
-    # Filter logic for the "My Movements" buttons
-    if filter_type == 'income':
-        queryset = queryset.filter(to_user=request.user)
-    elif filter_type == 'expense':
-        queryset = queryset.filter(from_user=request.user)
+        # Apply the filter if it exists in the URL
+        filter_type = self.request.GET.get('filter')
+        if filter_type == 'income':
+            queryset = queryset.filter(to_user=self.request.user)
+        elif filter_type == 'expense':
+            queryset = queryset.filter(from_user=self.request.user)
+        
+        return queryset
 
-    # Pagination: Divide the queryset into groups of 10 transactions.
-    paginator = Paginator(queryset, 10) 
-    
-    # Get the current page number from the URL (e.g: ?page=2)
-    page_number = request.GET.get('page')
-    
-    # Get the page object
-    page_obj = paginator.get_page(page_number)
-
-    # Return the 'page_obj' instead of 'transactions'
-    return render(request, 'transactions.html', {
-        'page_obj': page_obj,
-        'current_filter': filter_type  # Useful to highlight the active button in the frontend
-    })
+    def get_context_data(self, **kwargs):
+        # Pass 'current_filter' to the template for the buttons
+        context = super().get_context_data(**kwargs)
+        context['current_filter'] = self.request.GET.get('filter')
+        return context

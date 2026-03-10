@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-09] - Sprint 25: Business Logic & Advanced History Features](#2026-03-09---sprint-25-business-logic--advanced-history-features)
 - [[2026-03-06] - Sprint 23 & 24: Authentication System, View and Template Migration](#2026-03-06---sprint-23--24-authentication-system-view-and-template-migration)
 - [[2026-03-05] - Sprint 22: Django Model Definition and ORM Migration](#2026-03-05---sprint-22-django-model-definition-and-orm-migration)
 - [[2026-03-04] - Sprint 21: Django 6 Migration and Initialization](#2026-03-04---sprint-21-django-6-migration-and-initialization)
@@ -48,6 +49,35 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-09] - Sprint 25: Business Logic & Advanced History Features
+
+### Context & Goals
+In today's session the goal was to finalize the core financial logic for the `wallet` application (Phase 3 - `phase3-05`). I focused on enhancing the transaction history with advanced filtering (Incomes/Expenses), implementing robust pagination, and refactoring the codebase from procedural functions to Django's Class-Based Views (CBV) for better scalability and maintainability.
+
+### Technical Implementation
+*   **Model Enhancement:** Added `balance_after` field to the `Transaction` model to persist a "snapshot" of the user's balance at the moment of the transaction, ensuring an accurate and immutable audit trail.
+*   **Business Logic Update:** Refactored `deposit` and `transfer` views in `wallet/views.py` to populate the `balance_after` field immediately after successful balance updates within `transaction.atomic()` blocks.
+*   **Frontend Interactivity:** Updated `templates/transactions.html` to replace static buttons with dynamic filter links (`?filter=income/expense`) and implemented a responsive pagination UI using Bootstrap 5.
+*   **View Refactoring:** Transitioned the `history` view from a Function-Based View (FBV) to a `ListView` (CBV) to leverage Django's built-in pagination engine.
+*   **URL Routing:** Updated `core/urls.py` to handle the new class-based structure using the `.as_view()` method.
+
+### 💡 Deep Dive: FBV vs. CBV and the `.as_view()` function
+In this sprint, while implementing the pagination in the 'My Movements' view, I first implemented it using a  **Function-Based Views (FBV)** approach, and then refactored it to use a **Class-Based Views (CBV)** approach using the `ListView` class. The approach was different but the result was the same.
+
+**Key Differences in Pagination:**
+*   **In FBVs:** To make the pagination work, I had to manually import `Paginator`, catch the `page` parameter from `request.GET`, handle exceptions, and slice the queryset. Before the PR, I changed this approach to use the `paginate_by` attribute in the `ListView` class.
+*   **In CBVs:** By simply defining `paginate_by = 10`, Django automates the entire process, injecting a `page_obj` into the template context without extra boilerplate code.
+
+**Why `as_view()`?**
+
+Django’s URL resolver expects a callable function, not a class. The `.as_view()` method acts as a constructor that returns a function. When a request hits the URL, this function instantiates the class, assigns the `request` object to `self.request`, and dispatches the request to the appropriate method (like `get()` or `post()`).
+
+### Next Steps
+*   **Sprint 26 (Cleanup):** Remove legacy Phase 2 code (FastAPI modules and Pydantic schemas) from the `backend/` directory.
+*   **Quality Assurance:** Run `ruff` across the new Django codebase to ensure PEP 8 compliance.
 
 ---
 

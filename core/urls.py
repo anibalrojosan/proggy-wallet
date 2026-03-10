@@ -25,6 +25,6 @@ urlpatterns = [
     path('menu/', views.menu, name='menu'),
     path('deposit/', views.deposit, name='deposit'),
     path('transfer/', views.transfer, name='transfer'),
-    path('history/', views.history, name='history'),
+    path('history/', views.TransactionHistoryView.as_view(), name='history'),
     path('', lambda request: redirect('menu'), name='root_redirect'),
 ]
