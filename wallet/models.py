@@ -1,10 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
+from django.db.models import Q, CheckConstraint
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='account')
-    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            CheckConstraint(condition=Q(balance__gte=0), name='balance_non_negative')
+        ]
 
     def __str__(self):
         return f'{self.user.username} - Balance: ${self.balance}'
@@ -18,11 +25,16 @@ class Transaction(models.Model):
 
     from_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_transactions')
     to_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='received_transactions')
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0.01)])
     type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     balance_after = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+
+    class Meta:
+        constraints = [
+            CheckConstraint(condition=Q(amount__gt=0), name='amount_positive')
+        ]
 
     def __str__(self):
         return f'{self.type.capitalize()} - ${self.amount} ({self.created_at.strftime('%Y-%m-%d')})'

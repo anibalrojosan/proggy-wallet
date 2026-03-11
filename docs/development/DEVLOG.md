@@ -6,6 +6,9 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-11] - Sprint 25.5: Full-Layered Security and Integrity Implementation](#2026-03-11---sprint-255-full-layered-security-and-integrity-implementation)
+- [[2026-03-11] - Review: Data Integrity Layers in Django](#2026-03-11---review-data-integrity-layers-in-django)
+- [[2026-03-09] - Review: Service Layer Evolution & Django ORM Integration](#2026-03-09---review-service-layer-evolution--django-orm-integration)
 - [[2026-03-09] - Sprint 25: Business Logic & Advanced History Features](#2026-03-09---sprint-25-business-logic--advanced-history-features)
 - [[2026-03-06] - Sprint 23 & 24: Authentication System, View and Template Migration](#2026-03-06---sprint-23--24-authentication-system-view-and-template-migration)
 - [[2026-03-05] - Sprint 22: Django Model Definition and ORM Migration](#2026-03-05---sprint-22-django-model-definition-and-orm-migration)
@@ -51,6 +54,90 @@ It is a living document that will be updated as the project evolves.
 </details>
 
 ---
+
+## [2026-03-11] - Sprint 25.5: Full-Layered Security and Integrity Implementation
+
+### Context & Goals
+The objective of this sprint (`phase3-05b`) was to reinforce the financial security of **Proggy Wallet** by implementing a "Defense in Depth" strategy. While previous sprints handled form and view-level logic, this task focused on the most critical layers: the Frontend UX (Layer 1), Model Validation (Layer 5), and Database Integrity (Layer 6), ensuring that the system remains robust even after the legacy code cleanup.
+
+### Technical Implementation
+*   **Layer 6 (Database Constraints):** Added `CheckConstraint` in `wallet/models.py` for both `Account` (balance >= 0) and `Transaction` (amount > 0). This ensures that PostgreSQL physically rejects any invalid financial state at the engine level.
+*   **Layer 5 (Model Validation):** Implemented `MinValueValidator` on `balance` and `amount` fields. This provides a Python-level shield that triggers during `full_clean()` or within the Django Admin/Shell.
+*   **Layer 1 (Frontend UX):** Updated `templates/deposit.html` and `templates/sendmoney.html` to include native HTML5 attributes (`min="0.01"`, `step="0.01"`, `required`) for immediate user feedback.
+*   **Automated Testing:** Developed a comprehensive suite in `wallet/tests.py` using `assertRaises` to verify that both `ValidationError` (Python) and `IntegrityError` (SQL) are correctly triggered when rules are violated.
+*   **Environment Configuration:** Updated `pyproject.toml` to include `DJANGO_SETTINGS_MODULE`, allowing `pytest` to run seamlessly within the Django environment.
+
+### 💡 Deep Dive: Django Constraints vs. Validators
+A key learning from this sprint is the distinction between **Validators** and **Constraints**. 
+*   **Validators** (Layer 5) are "soft" checks; they are excellent for providing user-friendly error messages but can be bypassed if a developer uses methods like `.update()` or `.bulk_create()`. 
+*   **Constraints** (Layer 6) are "hard" checks; they are enforced by the database itself. By combining both, we achieve a balance between a great User Experience (via validators) and absolute Data Integrity (via constraints).
+
+### Next Steps
+*   **Final Verification:** Perform a manual end-to-end test of the transfer flow to ensure flash messages are correctly displayed for balance errors.
+*   **Sprint 26 (Cleanup):** Safely remove the legacy `backend/modules/` directory (FastAPI/Pydantic) now that the Django core is fully armored.
+*   **Documentation:** Update the project's architecture diagram to reflect these new security layers.
+
+---
+
+## [2026-03-11] - Review: Data Integrity Layers in Django
+
+### Context & Goals
+While studying data integrity within the Django ecosystem, I identified several critical security layers. Before proceeding with the final cleanup (Sprint 26), I decided to implement an intermediate sprint (`phase3-05b`) to ensure a "defense-in-depth" strategy. This review documents the six layers of protection that will safeguard the **Proggy Wallet** financial data.
+
+### Technical Implementation
+*   **Layer 1: User Interface (Frontend/Browser):** Immediate feedback using HTML5 attributes (`type="number"`, `min="0"`) and JavaScript to prevent unnecessary server requests and improve UX.
+*   **Layer 2: Transport & Protocol (Middleware/CSRF):** Django's built-in `CsrfViewMiddleware` and `AuthenticationMiddleware` verify request identity and protect against CSRF attacks.
+*   **Layer 3: Input Validation (Django Forms):** Server-side data sanitization using `forms.DecimalField(min_value=0)` and custom `clean_amount()` methods.
+*   **Layer 4: Business Logic (Views/Services):** Orchestration of atomic operations using `transaction.atomic()` to ensure "all-or-nothing" execution for financial movements.
+*   **Layer 5: Model Integrity (Django ORM):** Using Django's `validators=[MinValueValidator(0)]` on model fields to catch invalid data entry via the ORM, Admin, or Shell.
+*   **Layer 6: Database Integrity (Constraints):** The "Golden Rule" enforced directly by PostgreSQL via `CheckConstraint` (e.g., `balance >= 0`). This is the final line of defense against any logic bypass.
+
+### 💡 Deep Dive: Defense in Depth
+The concept of **Defense in Depth** is vital for financial applications. By implementing multiple overlapping security layers, we ensure that the failure of one layer (e.g., a bug in the view logic) is caught by a subsequent one (e.g., the database constraint). 
+
+In this sprint, the addition of **Layer 5 (Model Validators)** and **Layer 6 (DB Constraints)** provides a robust shield that persists when the legacy Phase 2 code is removed. This allows us to perform the cleanup in Sprint 26 with absolute confidence that the system's invariants remain protected at the lowest possible level.
+
+### Next Steps
+*   **Sprint 25.5 Execution:** Implement the `CheckConstraint` and `MinValueValidator` in `wallet/models.py`.
+*   **Frontend Update:** Ensure all templates use native HTML5 validation attributes.
+*   **Sprint 26 (Cleanup):** Remove legacy `backend/modules/` once the new multi-layered security is verified.
+
+---
+
+## [2026-03-09] - Review: Service Layer Evolution & Django ORM Integration
+
+### Context & Goals
+The objective of this review is to analyze how the **Service Layer** and **Domain-Driven Design (DDD)** principles established during Phase 2 have evolved with the migration to Django. I also detail how the **Django ORM** has replaced manual SQL and Pydantic repositories to handle financial logic more efficiently.
+
+### Technical Implementation
+*   **Encapsulation Shift:** In Phase 2, I used `entities.py` to protect business invariants. In Phase 3, these rules are encapsulated within Django's `models.py` and `forms.py` (using `clean()` methods).
+*   **Orchestration & Atomicity:** The manual `TransactionManager` from Phase 2 has been replaced by Django's `transaction.atomic()` blocks within `views.py`. This ensures "all-or-nothing" execution for transfers.
+*   **ORM as a Repository:** I transitioned from raw SQL (`SELECT`, `INSERT`) to Django's Querysets. The ORM now handles complex joins and filtering in the `TransactionHistoryView` using `Q` objects:
+    ```python
+    # Example of ORM usage in history view
+    queryset = Transaction.objects.filter(
+        Q(from_user=self.request.user) | Q(to_user=self.request.user)
+    ).order_by('-created_at')
+    ```
+*   **Data Integrity:** The `balance_after` field persists as a core part of the `Transaction` model, populated immediately after balance updates via the ORM's `.save()` method to guarantee a consistent audit trail.
+
+### 💡 Deep Dive: The "Service Layer" in a Framework World
+In my Phase 2 stack (FastAPI), a manual **Service Layer** was mandatory because the framework was "unopinionated". I had to build my own "glue" to connect Pydantic models, SQL repositories, and business entities.
+
+In **Django**, the framework provides a "High-Level" abstraction through its **ORM**. This tool has been pivotal in Phase 3 for:
+1.  **Model Definition:** Replacing `.sql` schema files with Python classes.
+2.  **Relationship Management:** Using `ForeignKey` and `OneToOneField` to handle data links automatically.
+3.  **Safe Writes:** Generating optimized `UPDATE` and `INSERT` statements while preventing SQL injection.
+
+Even with these "batteries", the **Service Layer pattern** remains relevant. As the **Proggy Wallet** grows, I could re-introduce an explicit `services.py` to prevent "Fat Views" and keep orchestration logic decoupled from HTTP concerns.
+
+### Next Steps
+*   **Documentation Sync:** Update `docs/DATABASE.md` and `docs/CLASS_DIAGRAM.md` to reflect the current Django model relationships (e.g., `OneToOneField` for `Account`).
+*   **Refactoring:** Evaluate moving the `transfer` and `deposit` orchestration logic from `views.py` to a dedicated `services.py` if additional side-effects are added.
+*   **Cleanup:** Proceed with the scheduled removal of legacy `backend/` modules (FastAPI/Pydantic) in the next sprint.
+
+---
+
 
 ## [2026-03-09] - Sprint 25: Business Logic & Advanced History Features
 
