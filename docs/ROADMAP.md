@@ -79,7 +79,7 @@ This document outlines the strategic technical progression from a basic Frontend
 
 ---
 
-## 🔵 Phase 4: Production & DevOps
+## 🔵 Phase 4: Cloud Deployment and CI/CD
 
 **Goal:** Containerize, automate, and deploy the application to a public cloud environment to establish a robust, production-ready infrastructure governed by automated CI/CD workflows.
 

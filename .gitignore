@@ -33,3 +33,4 @@ backend/data/*.json
 SPRINTS.md
 improvements.md
 test_scripts/
+scripts/
