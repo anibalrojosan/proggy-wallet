@@ -51,30 +51,44 @@ cd proggy-wallet
 uv sync
 ```
 
-### 3. Execution
+### 3. Environment Configuration
+Copy the example environment file and adjust if needed (e.g., change `DB_PASSWORD`):
 
-#### 3.1 **Database Setup (Docker):**
+```bash
+cp .env.example .env
+```
+
+### 4. Execution
+
+#### 4.1 **Database Setup (Docker):**
 Ensure Docker is running and start the PostgreSQL container:
 
 ```bash
 docker compose up -d
 ```
 
-#### 3.2 **Apply Migrations:**
+#### 4.2 **Apply Migrations:**
 Initialize the database schema and security constraints:
 
 ```bash
 uv run python manage.py migrate
 ```
 
-#### 3.3 **Run Development Server:**
+#### 4.3 **Create a User:**
+Create an admin/superuser to log in. You will use these credentials at http://localhost:8000/accounts/login/
+
+```bash
+uv run python manage.py createsuperuser
+```
+
+#### 4.4 **Run Development Server:**
 Start the Django server. It will be available at http://localhost:8000 by default.
 
 ```bash
 uv run python manage.py runserver
 ```
 
-#### 3.4 **Quality Control & Testing:**
+#### 4.5 **Quality Control & Testing:**
 This project follows strict PEP 8 standards and is fully tested.
 
 ```bash
