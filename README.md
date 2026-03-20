@@ -74,21 +74,28 @@ Initialize the database schema and security constraints:
 uv run python manage.py migrate
 ```
 
-#### 4.3 **Create a User:**
+#### 4.3 **Create a User (Optional):**
 Create an admin/superuser to log in. You will use these credentials at http://localhost:8000/accounts/login/
 
 ```bash
 uv run python manage.py createsuperuser
 ```
 
-#### 4.4 **Run Development Server:**
+#### 4.4 **Load Initial Data (Recommended):**
+To start with pre-configured test data (including the user `anibal`), run:
+
+```bash
+uv run python manage.py loaddata initial_data.json
+```
+
+#### 4.5 **Run Development Server:**
 Start the Django server. It will be available at http://localhost:8000 by default.
 
 ```bash
 uv run python manage.py runserver
 ```
 
-#### 4.5 **Quality Control & Testing:**
+#### 4.6 **Quality Control & Testing:**
 This project follows strict PEP 8 standards and is fully tested.
 
 ```bash
@@ -116,24 +123,25 @@ The design process and the implementation of this project are documented in the 
 ## Project Structure (Phase 3)
 ```text
 proggy-wallet/
-├── core/                 # ⚙️ Global Django settings and URL routing
-├── wallet/               # 💰 Main application (Models, Views, Forms, Tests)
-│   ├── migrations/       # 🗄️ Database version control
-│   ├── admin.py          # 🛡️ Admin interface configuration
-│   ├── forms.py          # 📝 Form validation logic (Layer 3)
-│   ├── models.py         # 🧠 Data models and constraints (Layers 5 & 6)
-│   ├── tests.py          # 🧪 Integration and unit tests
-│   └── views.py          # 🌐 Business logic and orchestration (Layer 4)
-├── templates/            # 🖥️ UI Views (Django Template Language)
-│   ├── base.html         # 🏗️ Master layout
-│   ├── registration/     # 🔑 Auth templates (Login)
-│   └── *.html            # 📱 Dashboard, Deposit, Transfer views
-├── static/               # 🎨 Static assets (CSS, JS, Images)
+├── config/               # ⚙️ Global Django settings and URL routing
 ├── docs/                 # 📝 Comprehensive documentation and ADRs
-├── .env.example          # 🔐 Environment variables (DB, SECRET_KEY)
+├── wallet/               # 💰 Main application (Models, Views, Forms, Tests)
+│   ├── fixtures/         # 📦 Initial data (JSON)
+│   ├── migrations/       # 🗄️ Database version control
+│   ├── templates/        # 🖥️ UI Views (Django Template Language)
+│   │   └── wallet/       # 📱 Scoped templates
+│   ├── admin.py          # 🛡️ Admin interface configuration
+│   ├── forms.py          # 📝 Form validation logic
+│   ├── models.py         # 🧠 Data models and constraints
+│   ├── tests.py          # 🧪 Integration and unit tests
+│   └── views.py          # 🌐 Business logic and orchestration
+├── .env.example          # 🔐 Environment variables
+├── .gitignore            # 📂 Git ignore rules
+├── .python-version       # 🐍 Python version
 ├── docker-compose.yml    # 🐳 PostgreSQL container configuration
-├── pyproject.toml        # ⚙️ Project configuration & dependencies (uv)
-└── manage.py             # 🚀 Django management entry point
+├── manage.py             # 🚀 Django management entry point
+├── pyproject.toml        # ⚙️ Project configuration & dependencies
+└── uv.lock               # 🔒 Lockfile for reproducible dependencies
 ```
 
 ## Architecture & Security (Defense in Depth)

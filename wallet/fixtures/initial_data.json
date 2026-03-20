@@ -1,0 +1,661 @@
+[
+{
+  "model": "wallet.account",
+  "pk": 1,
+  "fields": {
+    "user": 3,
+    "balance": "570.00",
+    "created_at": "2026-03-06T19:51:25.948Z"
+  }
+},
+{
+  "model": "wallet.account",
+  "pk": 2,
+  "fields": {
+    "user": 4,
+    "balance": "160.00",
+    "created_at": "2026-03-06T19:51:25.959Z"
+  }
+},
+{
+  "model": "wallet.account",
+  "pk": 3,
+  "fields": {
+    "user": 1,
+    "balance": "900.00",
+    "created_at": "2026-03-06T21:57:09.495Z"
+  }
+},
+{
+  "model": "wallet.account",
+  "pk": 4,
+  "fields": {
+    "user": 2,
+    "balance": "200.00",
+    "created_at": "2026-03-12T01:05:16.871Z"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 1,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.053Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 2,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.071Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 3,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.079Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 4,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.085Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 5,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.090Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 6,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.098Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 7,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.103Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 8,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.109Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 9,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.116Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 10,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.122Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 11,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.127Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 12,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.135Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 13,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.142Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 14,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Prueba de integración de repositorio",
+    "created_at": "2026-03-06T20:03:25.150Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 15,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.157Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 16,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.163Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 17,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.169Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 18,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "10.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.174Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 19,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "10.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.180Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 20,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "10.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.186Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 21,
+  "fields": {
+    "from_user": 1,
+    "to_user": 3,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to SYSTEM",
+    "created_at": "2026-03-06T20:03:25.192Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 22,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "10.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.198Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 23,
+  "fields": {
+    "from_user": 1,
+    "to_user": 3,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to SYSTEM",
+    "created_at": "2026-03-06T20:03:25.205Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 24,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "10.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.212Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 25,
+  "fields": {
+    "from_user": 1,
+    "to_user": 3,
+    "amount": "50.00",
+    "type": "transfer_out",
+    "description": "Transfer to SYSTEM",
+    "created_at": "2026-03-06T20:03:25.217Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 26,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "10.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.223Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 27,
+  "fields": {
+    "from_user": 3,
+    "to_user": 1,
+    "amount": "20.00",
+    "type": "deposit",
+    "description": "External deposit",
+    "created_at": "2026-03-06T20:03:25.228Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 28,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "10.00",
+    "type": "transfer_out",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-06T20:03:25.234Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 29,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-07T02:51:17.882Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 30,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "200.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-09T23:03:52.290Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 31,
+  "fields": {
+    "from_user": 1,
+    "to_user": 3,
+    "amount": "20.00",
+    "type": "transfer",
+    "description": "Transfer to SYSTEM",
+    "created_at": "2026-03-09T23:04:06.851Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 32,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-09T23:06:03.462Z",
+    "balance_after": null
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 33,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "200.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-10T00:15:42.209Z",
+    "balance_after": "1000.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 34,
+  "fields": {
+    "from_user": 1,
+    "to_user": 3,
+    "amount": "100.00",
+    "type": "transfer",
+    "description": "Transfer to SYSTEM",
+    "created_at": "2026-03-10T00:15:56.523Z",
+    "balance_after": "900.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 35,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-10T00:33:34.056Z",
+    "balance_after": "1000.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 36,
+  "fields": {
+    "from_user": 1,
+    "to_user": 4,
+    "amount": "100.00",
+    "type": "transfer",
+    "description": "Transfer to sistema",
+    "created_at": "2026-03-10T00:33:52.798Z",
+    "balance_after": "900.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 37,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-10T01:16:58.159Z",
+    "balance_after": "1000.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 38,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "200.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-11T23:52:51.076Z",
+    "balance_after": "1200.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 39,
+  "fields": {
+    "from_user": null,
+    "to_user": 1,
+    "amount": "100.00",
+    "type": "deposit",
+    "description": "Deposit via web",
+    "created_at": "2026-03-12T00:59:14.977Z",
+    "balance_after": "1300.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 40,
+  "fields": {
+    "from_user": 1,
+    "to_user": 3,
+    "amount": "200.00",
+    "type": "transfer",
+    "description": "Transfer to SYSTEM",
+    "created_at": "2026-03-12T01:00:04.792Z",
+    "balance_after": "1100.00"
+  }
+},
+{
+  "model": "wallet.transaction",
+  "pk": 41,
+  "fields": {
+    "from_user": 1,
+    "to_user": 2,
+    "amount": "200.00",
+    "type": "transfer",
+    "description": "Transfer to Anibal",
+    "created_at": "2026-03-12T01:05:44.055Z",
+    "balance_after": "900.00"
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$fY23pEjKlVktbSGBBiRlVQ$zwXqZrvvcy6wQDqMVbjc6pwoG/GqOQYgiqtbldKGTik=",
+    "last_login": "2026-03-18T23:33:09.179Z",
+    "is_superuser": true,
+    "username": "anibal",
+    "first_name": "",
+    "last_name": "",
+    "email": "anibal.rojo.sandoval@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-03-04T21:42:00.373Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$jiI48SJLkcV55BGGRzTDGm$PQ3wtnEHS0PC59MQshAeWtcpuC3p7RSzKaiDXw4MPik=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "Anibal",
+    "first_name": "",
+    "last_name": "",
+    "email": "anibal.rojo.sandoval@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-03-06T00:41:05.644Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "no_pass",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "SYSTEM",
+    "first_name": "",
+    "last_name": "",
+    "email": "system@wallet.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-06T19:51:25.931Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "hashed_secret",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "sistema",
+    "first_name": "",
+    "last_name": "",
+    "email": "system@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-06T19:51:25.956Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$zIbqYYnY9yVTVuuaqJbwSx$R62LfIJeDT3/if3Ox+wEUIDipu4Btt6rST7UdMtokEo=",
+    "last_login": "2026-03-18T23:29:42.873Z",
+    "is_superuser": true,
+    "username": "anibalrojo",
+    "first_name": "",
+    "last_name": "",
+    "email": "anibal.rojo.sandoval@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-03-18T23:29:02.579Z",
+    "groups": [],
+    "user_permissions": []
+  }
+}
+]

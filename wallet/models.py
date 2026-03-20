@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db.models import Q, CheckConstraint
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='account')
@@ -15,6 +17,11 @@ class Account(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - Balance: ${self.balance}'
+
+@receiver(post_save, sender=User)
+def create_user_account(sender, instance, created, **kwargs):
+    if created:
+        Account.objects.get_or_create(user=instance)
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = [

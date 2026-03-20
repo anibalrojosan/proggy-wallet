@@ -13,7 +13,7 @@ from .models import Transaction
 
 @login_required
 def menu(request):
-    return render(request, 'menu.html')
+    return render(request, 'wallet/menu.html')
 
 @login_required
 def deposit(request):
@@ -46,7 +46,7 @@ def deposit(request):
     else:
         form = DepositForm()
 
-    return render(request, 'deposit.html', {'form': form})
+    return render(request, 'wallet/deposit.html', {'form': form})
 
 @login_required
 def transfer(request):
@@ -87,11 +87,11 @@ def transfer(request):
     else:
         form = TransferForm(user=request.user)
 
-    return render(request, 'sendmoney.html', {'form': form})
+    return render(request, 'wallet/sendmoney.html', {'form': form})
 
 class TransactionHistoryView(LoginRequiredMixin, ListView):
     model = Transaction
-    template_name = 'transactions.html'
+    template_name = 'wallet/transactions.html'
     context_object_name = 'page_obj'
     paginate_by = 10
 
