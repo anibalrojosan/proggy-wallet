@@ -82,7 +82,7 @@ uv run python manage.py createsuperuser
 ```
 
 #### 4.4 **Load Initial Data (Recommended):**
-To start with pre-configured test data (including the user `anibal`), run:
+To start with pre-configured test data, run:
 
 ```bash
 uv run python manage.py loaddata initial_data.json
