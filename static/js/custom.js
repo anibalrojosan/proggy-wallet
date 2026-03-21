@@ -1,0 +1,1 @@
+/* JavaScript for the Proggy Wallet project. */
