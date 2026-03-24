@@ -2,58 +2,79 @@
 
 This document serves as one of the three documents that makes up the single source of truth of this project, along with [ARCHITECTURE.md](ARCHITECTURE.md) and [PRD.md](PRD.md). Here its defined the *database* schema of the project, *where* and *how* the data is stored and how the entities interact with each other to accomplish the business logic defined in the PRD.
 
+The **implemented schema** matches **Phase 3** (Django ORM): Django’s built-in user table plus `wallet_account` and `wallet_transaction` (see `wallet/models.py` and migrations).
+
 ## Entity Relationship Diagram (ERD)
 
 ```mermaid
 erDiagram
-    USERS ||--o{ TRANSACTIONS : "performs"
-    
-    USERS {
+    USER ||--|| ACCOUNT : "OneToOne"
+    "TRANSACTION" }o--|| USER : "from_user"
+    "TRANSACTION" }o--|| USER : "to_user"
+
+    USER {
         int id PK
-        string username
+        string username UK
         string email
-        string password_hash
-        decimal balance
+        string password
     }
 
-    TRANSACTIONS {
+    ACCOUNT {
         int id PK
-        int user_id FK
-        string type
+        int user_id FK, UK
+        decimal balance
+        datetime created_at
+    }
+
+    "TRANSACTION" {
+        int id PK
+        int from_user_id FK "nullable"
+        int to_user_id FK "nullable"
         decimal amount
-        string related_user
-        timestamp created_at
+        string type
+        text description
+        datetime created_at
+        decimal balance_after "nullable"
     }
 ```
 
 ## Data Model Explanation
 
-The current design follows a simplified relational model focused on financial integrity and traceability, perfectly suited for the Phase 2 requirements.
+The design separates **identity** (Django `User`), **current funds** (`Account`), and the **ledger** (`Transaction`). Financial rules are enforced with ORM validators and PostgreSQL `CHECK` constraints (via Django `CheckConstraint`).
 
 ### Entities and Relationships
 
-#### 1. USERS Entity
-This is the core of the wallet system. It contains the user's identification data and the current total funds available to the user.
-- **id (PK)**: Unique identifier for each user.
-- **username / email**: Identification data, marked as `UNIQUE` to prevent duplicates.
-- **password_hash**: Stores encrypted passwords (never plain text) for security.
-- **balance**: The current total funds available to the user.
+#### 1. User (`django.contrib.auth.models.User`)
 
-#### 2. TRANSACTIONS Entity
-Records every movement of money.
-- **id (PK)**: Unique identifier for the transaction.
-- **user_id (FK)**: Links the transaction to a specific user.
-- **type**: Categorizes the movement (e.g., `deposit`, `transfer`).
-- **amount**: The monetary value of the transaction. Uses `decimal` types to ensure precision and avoid floating-point errors.
-- **related_user**: Stores the counterpart's name for transfers, providing quick context without complex joins.
-- **created_at**: Automatic timestamp for audit trails.
+Standard Django authentication user. Holds username, email, password hash, and related auth fields. **Balance is not stored on `User`.**
+
+#### 2. Account (`wallet.Account`)
+
+One row per user wallet balance.
+
+- **user**: `OneToOneField` to `User` (`related_name='account'`). Cascade delete removes the account with the user.
+- **balance**: `DecimalField(max_digits=12, decimal_places=2)`, default `0.00`, with `MinValueValidator(0)` and DB check **`balance >= 0`** (`balance_non_negative`).
+- **created_at**: Set automatically on create.
+
+**Provisioning:** A `post_save` signal on `User` calls `Account.objects.get_or_create(user=instance)` when a user is created, so new users always get an `Account`.
+
+#### 3. Transaction (`wallet.Transaction`)
+
+Append-only style ledger for deposits and transfers (and reserved type `withdrawal` in choices).
+
+- **from_user** / **to_user**: Optional `ForeignKey` to `User` (`SET_NULL` on delete), `related_name='sent_transactions'` / `'received_transactions'`. Deposits set `to_user` only; transfers set both.
+- **amount**: `DecimalField` with `MinValueValidator(0.01)` and DB check **`amount > 0`** (`amount_positive`).
+- **type**: `CharField` with choices `deposit`, `transfer`, `withdrawal`.
+- **description**: Optional text (e.g. transfer memo).
+- **created_at**: Automatic timestamp.
+- **balance_after**: Optional; after deposits/transfers from the web UI it stores the **sender’s** account balance after the operation where applicable.
 
 ### Key Design Principles
 
-- **One-to-Many Relationship (`||--o{`)**: A single user can have multiple transactions, but each transaction belongs to exactly one user.
-- **Data Integrity**: The schema includes database-level constraints (e.g., `balance >= 0` and `amount > 0`) to enforce business rules at the storage layer.
-- **Scalability**: While simple, this two-table structure provides a solid foundation for future features like categories or contact lists.
+- **Separation of concerns**: Balances live on `Account`; `Transaction` rows provide history and audit context.
+- **Integrity**: Non-negative balance and strictly positive amounts are enforced at validation and database level.
+- **Evolution**: Optional FKs and `withdrawal` allow future flows without breaking existing rows.
 
 ---
 
-*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*
+*Last updated: 23 March, 2026 — Phase 3 (Django wallet); schema aligned with `wallet/models.py`.*
