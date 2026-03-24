@@ -28,6 +28,23 @@ proggy-wallet/
 │   ├── models.py
 │   ├── tests.py
 │   └── views.py
+├── profiles/             # Phase 3.1 — UserProfile, avatar, edit profile (planned)
+│   ├── migrations/
+│   ├── templates/
+│   │   └── profiles/
+│   ├── models.py         # UserProfile (OneToOne User)
+│   ├── forms.py
+│   ├── views.py
+│   ├── urls.py
+│   └── tests.py
+├── reports/              # Phase 3.1 — insights, charts, CSV export (planned)
+│   ├── migrations/       # Often empty at v1 (read-only from wallet)
+│   ├── templates/
+│   │   └── reports/
+│   ├── services.py       # Optional: aggregation helpers
+│   ├── views.py
+│   ├── urls.py
+│   └── tests.py
 ├── templates/            # Optional project-level templates (e.g. index.html)
 ├── static/               # STATICFILES_DIRS in settings (project static assets)
 ├── docs/
@@ -38,7 +55,15 @@ proggy-wallet/
 └── manage.py
 ```
 
-**Template loading:** `config/settings.py` sets `TEMPLATES['DIRS']` to `[]` and uses `APP_DIRS: True`, so app templates are resolved from `wallet/templates/` (and other installed apps).
+**Template loading:** `config/settings.py` sets `TEMPLATES['DIRS']` to `[]` and uses `APP_DIRS: True`, so app templates are resolved from each installed app’s `templates/` package (e.g. `wallet`, then `profiles`, `reports` once added).
+
+### App dependencies (Phase 3.1 target)
+
+| App | Depends on | Notes |
+| --- | --- | --- |
+| `wallet` | `django.contrib.auth` | Core ledger and accounts. |
+| `profiles` | `auth.User` | `UserProfile` one-to-one; media files via `MEDIA_*` settings. |
+| `reports` | `wallet` (read-only) | Query `Transaction` / `Account`; no duplicate write path for money movement. |
 
 ## Wallet application (`wallet/`)
 
@@ -50,7 +75,7 @@ proggy-wallet/
 
 ## Global configuration (`config/`)
 
-- **`settings.py`**: Database (`DB_URL` via `django-environ`), `INSTALLED_APPS` (includes `wallet`), middleware, `STATIC_URL` / `STATICFILES_DIRS`, auth redirects (`LOGIN_REDIRECT_URL = 'menu'`, `LOGOUT_REDIRECT_URL = 'login'`), custom `PASSWORD_HASHERS` list.
+- **`settings.py`**: Database (`DB_URL` via `django-environ`), `INSTALLED_APPS` (includes `wallet`; will include `profiles`, `reports`), middleware, `STATIC_URL` / `STATICFILES_DIRS`, **`MEDIA_URL` / `MEDIA_ROOT`** when avatars ship (Phase 3.1), auth redirects (`LOGIN_REDIRECT_URL = 'menu'`, `LOGOUT_REDIRECT_URL = 'login'`), custom `PASSWORD_HASHERS` list.
 - **`urls.py`**: Root routes (see below).
 
 ### URL map (root `config/urls.py`)
@@ -65,6 +90,16 @@ proggy-wallet/
 | `history/` | `wallet.views.TransactionHistoryView` → `wallet/transactions.html` |
 | `''` | Redirect to named route `menu` |
 
+### Planned URLs (Phase 3.1 — wire in `config/urls.py` when implemented)
+
+| Path (illustrative) | App | Purpose |
+| --- | --- | --- |
+| `profile/` or `profiles/` | `profiles` | View/edit `UserProfile`, avatar upload |
+| `insights/` or `reports/` | `reports` | Dashboard of aggregates / charts |
+| `reports/export.csv` (example) | `reports` | User-scoped CSV download |
+
+Exact path prefixes and names should match `profiles/urls.py` and `reports/urls.py` once created.
+
 ## Presentation layer
 
 - **DTL**: Bootstrap-oriented pages under `wallet/templates/`; login under `wallet/templates/registration/` for `auth` URLs.
@@ -72,4 +107,4 @@ proggy-wallet/
 
 ---
 
-*Last updated: 23 March, 2026 — Phase 3; aligned with `config/` and `wallet/`.*
+*Last updated: 23 March, 2026 — Phase 3 shipped; Phase 3.1 (`profiles`, `reports`) planned structure.*

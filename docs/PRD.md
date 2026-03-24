@@ -6,7 +6,7 @@ This document serves as one of the three documents that makes up the single sour
 
 This project is developed as a self-authored solution based on real-world fintech industry challenges.
 * **Core Base**: The initial Functional Requirements (MVP) were based on a dynamic frontend and Python data management.
-* **Evolution**: The project has evolved from a flat-file prototype (Phase 1) to a robust relational architecture (Phase 2), with a roadmap towards a full-stack Django enterprise application (Phase 3 & 4).
+* **Evolution**: The project evolved from a flat-file prototype (Phase 1) to PostgreSQL and structured domain concepts (Phase 2), then to a **Django** web application (Phase 3). **Phase 3.1** adds user profile and reporting capabilities on top of the wallet core.
 
 ## **2. Project Vision**
 
@@ -18,42 +18,59 @@ To develop a reference architecture for a digital wallet application. The primar
 |---|---|---|
 | **Frontend**       | **HTML5 / Bootstrap 5** | Semantic structure and responsive design (Mobile-first). |
 |                    | **JavaScript / jQuery** | DOM manipulation and client-side logic. |
-| **Backend**        | **Python 3.12+ / FastAPI** | Business logic, API endpoints, and data processing. |
-| **Database**       | **PostgreSQL 18** | Relational data persistence and integrity. |
-| **Quality (QA)**   | **Ruff / Pytest** | Strict linting and unit testing suite. |
+| **Backend**        | **Python 3.12+ / Django** | Server-side logic, routing, ORM, forms, session auth, admin. |
+| **Database**       | **PostgreSQL** | Relational data persistence and integrity. |
+| **Quality (QA)**   | **Ruff / Pytest** | Strict linting and automated tests. |
 | **Management**     | **uv** | High-performance dependency and project manager. |
-| **Validation**     | **Pydantic** | Data Schema definition and runtime validation. |
-| **Infrastructure** | **Docker** | Containerization for consistent environments. |
+| **Validation**     | **Django Forms / ORM** | Server-side validation and model constraints. |
+| **Infrastructure** | **Docker** (Phase 4) | Containerization for consistent environments and deployment. |
 
-## **4. Functional Requirements (Phase 2 - Robustness)**
+## **4. Functional Requirements**
 
-**A. Frontend Module**
-1. **Login**: Secure authentication flow.
-2. **Dashboard**: Real-time balance display and navigation.
-3. **Deposits**: Form to add funds with immediate database update.
-4. **Transfers**: Peer-to-peer money transfers with balance validation.
-5. **History**: Detailed transaction ledger fetched from PostgreSQL.
+### **4.1 Phase 3 — Wallet core (delivered)**
 
-**B. Backend & Data Module**
-1. **API Layer (FastAPI)**: RESTful endpoints to connect Frontend and Database.
-2. **Relational Persistence**: Full migration from JSON/CSV to PostgreSQL.
-3. **Financial Logic**: Atomic transactions to ensure data consistency during transfers.
-4. **Type Validation**: Strict Pydantic models for all incoming and outgoing data.
+**A. Authenticated web experience**
+1. **Login / logout**: Django session-based authentication.
+2. **Menu / dashboard**: Entry point after login; navigation to wallet actions.
+3. **Deposits**: Form to add funds with immediate persistence on the user’s `Account`.
+4. **Transfers**: Peer-to-peer transfers with balance validation and atomic updates.
+5. **History**: Transaction ledger scoped to the current user, with filtering and pagination.
+
+**B. Data and integrity**
+1. **Single source of truth** for balances on `Account`; immutable-style ledger on `Transaction` as implemented in Django.
+2. **Financial logic**: Atomic operations for transfers and deposits (database transaction boundaries).
+3. **Constraints**: Non-negative balances, strictly positive transaction amounts, enforced in ORM and DB where defined.
+
+### **4.2 Phase 3.1 — Profiles & insights (planned)**
+
+**A. `profiles` app**
+1. **UserProfile**: Extended data linked **one-to-one** to Django `User` (e.g. display-oriented fields, optional bio).
+2. **Avatar**: Optional profile image upload with documented limits (format/size); storage per [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
+3. **Edit flow**: Authenticated user can view and update their own profile (and avatar).
+
+**B. `reports` app (insights)**
+1. **Summaries**: Aggregated views over the user’s wallet activity (e.g. by period, by movement type), using existing `wallet` models only (**read-only**).
+2. **Visualization**: Charts or summary cards as appropriate (implementation detail).
+3. **Export**: Minimum **CSV** export for a clearly defined user-scoped dataset (e.g. filtered transactions or summary table — exact export shape to be fixed in implementation and MODULES/FLOWS).
+
+### **4.3 Phase 5 — Out of current MVP**
+
+Features listed under **Phase 5** in [ROADMAP.md](ROADMAP.md) (preferences, notifications, support, budgets, etc.) are **not** part of Phase 3.1 unless explicitly pulled into a future milestone.
 
 ## **5. Non-Functional Requirements**
 
-- **Data Integrity**: Database-level constraints (CHECK, UNIQUE, FK) to prevent invalid financial states.
-- **Security**: Password hashing (BCrypt/Argon2) and environment variable management (.env).
-- **Modularity**: Clean separation between API routes, business logic, and database repositories.
-- **Performance**: Efficient querying and containerized execution.
+- **Data Integrity**: Database-level constraints (CHECK, UNIQUE, FK) and Django validators to prevent invalid financial states.
+- **Security**: Password hashing, CSRF on state-changing requests, environment-based secrets (`.env` / platform config).
+- **Modularity**: Separate Django apps for wallet core, profiles, and reports with clear dependencies (`reports` reads `wallet` data; does not duplicate ledger writes).
+- **Performance**: Efficient ORM queries for history and reports; pagination where lists are large.
 
 ## **6. Phase Deliverables**
 
-- **PostgreSQL Schema**: Documented ERD and SQL migrations.
-- **FastAPI Backend**: Functional API with Pydantic validation.
-- **Technical Documentation**: Comprehensive guides for development, modules, and flows.
-- **Dockerized Environment**: Fully portable setup via `docker-compose`.
+- **PostgreSQL schema**: Documented in [DATABASE.md](DATABASE.md); Django migrations in-repo.
+- **Django application**: Wallet flows (Phase 3); profiles and reports (Phase 3.1).
+- **Technical documentation**: PRD, ARCHITECTURE, DATABASE, MODULES, FLOWS, ADRs.
+- **Dockerized environment** (Phase 4): Portable runtime via `Dockerfile` / `docker-compose` and CI.
 
 ---
 
-*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*
+*Last updated: 23 March, 2026 — Django-only product stack; Phase 3.1 requirements added.*
