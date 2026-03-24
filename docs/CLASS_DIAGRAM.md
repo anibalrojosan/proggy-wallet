@@ -1,80 +1,78 @@
 # Class Diagram & Design Decisions
 
-This document outlines the Object-Oriented Programming (OOP) architecture for **Proggy Wallet** introduced in Phase 2. The transition from procedural scripts to a class-based structure aims to improve maintainability, scalability, and data integrity.
+This document describes the **domain-oriented** structure of Proggy Wallet aligned with the **Django** implementation (Phase 3) and the **planned** Phase 3.1 models. It complements [DATABASE.md](DATABASE.md) and `wallet/models.py`.
 
-## Class Diagram
+## Class diagram (conceptual / ORM-aligned)
 
 ```mermaid
 classDiagram
     class User {
-        +String username
-        +String email
-        +String hashed_password
-        +Account account
-        +login(password) bool
-        +update_profile(email, full_name)
+        <<django.contrib.auth>>
+        +username
+        +email
+        +password hash
+    }
+
+    class UserProfile {
+        <<profiles Phase 3.1>>
+        +OneToOne user
+        +avatar optional
+        +bio optional
     }
 
     class Account {
-        +String owner_username
-        +Float balance
-        +List~Transaction~ transactions
-        +deposit(amount, source) Transaction
-        +transfer(target_account, amount) Transaction
-        +get_history() List~Transaction~
+        <<wallet.Account>>
+        +OneToOne user
+        +Decimal balance
+        +created_at
     }
 
     class Transaction {
-        +DateTime date
-        +String type
-        +Float amount
-        +Float balance_after
-        +String description
-        +to_dict() dict
+        <<wallet.Transaction>>
+        +FK from_user optional
+        +FK to_user optional
+        +Decimal amount
+        +type
+        +description
+        +created_at
+        +balance_after optional
     }
 
-    class TransactionManager {
-        <<Service>>
-        +execute_transfer(from_account, to_account, amount)
-        +record_to_persistence(transaction)
-    }
-
-    User "1" -- "1" Account : has
-    Account "1" -- "*" Transaction : contains
-    TransactionManager ..> Account : manages
-    TransactionManager ..> Transaction : creates
+    User "1" -- "1" Account : account
+    User "1" -- "0..1" UserProfile : profile
+    User "1" -- "*" Transaction : sent_transactions
+    User "1" -- "*" Transaction : received_transactions
 ```
 
-## Design Decisions
+**Phase 3.1 (reports):** Aggregation and export logic may live in plain Python functions or a small **`reports.services`** module; it is not a second ledger. Diagrams can add `<<service>>` helpers later if useful.
+
+## Design decisions
 
 ### 1. Decoupling User and Account
-*   **Decision:** The `User` entity handles identity and authentication, while the `Account` entity manages financial state.
-*   **Rationale:** This follows the **Single Responsibility Principle (SRP)**. A user represents a person, whereas an account represents a financial container. This separation allows a single user to potentially own multiple accounts (e.g., Savings, Checking) in future iterations without refactoring the core identity logic.
 
-### 2. Encapsulated Logic in Account
-*   **Decision:** Core financial operations like `deposit()` and `transfer()` are methods within the `Account` class.
-*   **Rationale:** This ensures that the account "protects" its own state. The account is responsible for validating its balance before allowing a withdrawal or transfer, preventing invalid financial states at the object level.
+* **Decision:** Django `User` holds identity; `wallet.Account` holds the spendable balance (`OneToOne`).
+* **Rationale:** Single responsibility. Matches the shipped ORM and migrations.
 
-### 3. Immutable Transaction Records
-*   **Decision:** The `Transaction` class acts as a read-only snapshot of a financial event.
-*   **Rationale:** In financial systems, audit trails must be immutable. Once a transaction is created, it should never be modified. This ensures the integrity of the transaction history and simplifies balance reconciliation.
+### 2. Transaction as ledger row
 
-### 4. TransactionManager as a Service Layer
-*   **Decision:** Introduced a `TransactionManager` to handle complex operations involving multiple entities.
-*   **Rationale:** A transfer involves two different accounts. Placing this logic inside one of the accounts would create tight coupling. The `TransactionManager` acts as a coordinator (Service Pattern) that ensures the operation is atomic: if the deduction from the sender fails, the credit to the receiver never happens.
+* **Decision:** `wallet.Transaction` records movements with optional `from_user` / `to_user` and positive `amount`.
+* **Rationale:** Audit trail and history UI; constraints at DB and model level prevent invalid amounts.
 
-### 5. Type Safety with Pydantic (Integration)
-*   **Decision:** All class attributes will be validated using Pydantic models before object instantiation.
-*   **Rationale:** This provides a "fail-fast" mechanism. By enforcing strict types and constraints (e.g., `amount > 0`) at the entry point, we ensure that the logic within our classes always operates on clean, valid data.
+### 3. UserProfile extension (Phase 3.1)
 
-### 6. Data Transfer Objects (DTO) Pattern
-*   **Decision:** Split models into `Base`, `Create`, and `Final` versions (e.g., `UserBase`, `UserCreate`, `User`).
-*   **Rationale:** Data takes different shapes depending on the application stage.
-    *   **Base:** Contains common fields (e.g., `username`, `email`) to follow the **DRY (Don't Repeat Yourself)** principle.
-    *   **Create:** Used only during registration/creation; it includes sensitive fields like `password` but lacks system-generated fields like `id` or `balance`.
-    *   **Final/Out:** Used for responses and internal logic; it excludes sensitive data like passwords for security while including stateful data like `balance`.
-    *   **Benefit:** This separation prevents critical security leaks, such as accidentally exposing password hashes through the API.
+* **Decision:** Separate **`UserProfile`** model with **`OneToOneField`** to `User` for display fields and avatar.
+* **Rationale:** Avoid overriding Django’s `User` table; keeps auth upgrades straightforward. Avatar storage follows [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
+
+### 4. Validation in Django, not a parallel API layer
+
+* **Decision:** Incoming data is validated with **Django Forms** and **model validators** / `CheckConstraint`.
+* **Rationale:** The product is a server-rendered Django app; one validation path reduces drift.
+
+### 5. Reports read the wallet schema
+
+* **Decision:** First version of **`reports`** performs **read-only** ORM queries over `Transaction` (and `Account` if needed for context).
+* **Rationale:** One source of truth for money; reporting cannot bypass wallet invariants.
 
 ---
 
-*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*
+*Last updated: 23 March, 2026 — Django / Phase 3 + planned `UserProfile`.*

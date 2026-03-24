@@ -3,106 +3,94 @@
 This document serves as one of the three documents that makes up the single source of truth of this project, along with [PRD.md](PRD.md) and [DATABASE.md](DATABASE.md). Here its defined the *architecture* of the project, *how* the components interact with each other and how the data flows to accomplish the business logic defined in the PRD.
 
 ## 1. Overview
-**Proggy Wallet** is a virtual wallet application designed to manage personal finances through a simple and secure web interface. The system enables users to perform core banking operations (deposits, transfers, and transaction history tracking) within a dynamic, real-time environment.
 
-The architecture follows a **Decoupled Client-Server model**, ensuring that the User Interface (UI) and the Business Logic can evolve independently.
+**Proggy Wallet** is a virtual wallet application designed to manage personal finances through a simple and secure web interface. The system enables users to perform core banking operations (deposits, transfers, and transaction history tracking) within a session-based, server-rendered environment.
+
+The architecture follows a **classic Django web application** model: the browser exchanges HTML form posts and GET navigations with the server; the server is the **single source of truth** for balances and ledger data.
 
 ## 2. System Components
 
 ### 2.1 Frontend (The Client)
-*   **Responsibility:** Data presentation, user input capture, and local session management.
-*   **State Management:** The client is "stateless" regarding financial data. It does not calculate balances; it only requests and displays data provided by the server.
-*   **Technologies:** `HTML5`, `Bootstrap 5` (Responsive UI), and `jQuery` (DOM manipulation and UX effects).
+
+* **Responsibility:** Data presentation, user input capture, and session cookie handling.
+* **State Management:** The client does not compute authoritative balances; it displays values returned by the server.
+* **Technologies:** `HTML5`, `Bootstrap 5` (responsive UI), and `jQuery` (DOM manipulation and UX effects).
 
 ### 2.2 Backend (The Server)
-*   **Responsibility:** The "Single Source of Truth." It handles data validation, transaction processing, and persistence.
-*   **Interface:** It exposes a RESTful API using FastAPI.
-*   **Technologies:** `Python 3.12+`, `FastAPI`, and `Pydantic` (Schema validation).
 
-## 3. Data Flow (HTTP Request/Response Cycle)
+* **Responsibility:** Authentication, validation, business orchestration, and persistence.
+* **Interface:** **Django** — URL routing, views (function- and class-based), Django Forms, Django ORM, and Django Templates.
+* **Technologies:** `Python 3.12+`, **Django**, **PostgreSQL**.
 
-Communication between components follows an asynchronous pattern:
+### 2.3 Planned apps (Phase 3.1)
 
-1.  **Trigger:** The user performs an action (e.g., clicking "Transfer").
-2.  **Request:** The Frontend emits an asynchronous `fetch` request, sending a JSON object in the `body` and specifying `Content-Type: application/json` in the headers.
-3.  **Validation:** FastAPI receives the request and utilizes **Pydantic Models** to ensure data types and constraints (e.g., positive amounts) are met before execution.
-4.  **Business Logic:** Python modules process the operation via the Service Layer.
-5.  **Persistence:** Data is persisted in PostgreSQL via the Repository layer.
-6.  **Response:** The Backend returns an HTTP status code (e.g., 200: OK, 400: Bad Request) and a JSON response object.
-7.  **UI Update:** The Frontend receives the response and updates the DOM dynamically without a page reload.
+* **`profiles`:** `UserProfile` linked to `User`; profile edit and **avatar** uploads. Media storage strategy: [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
+* **`reports`:** Read-only **insights** over `wallet` models (aggregations, charts, CSV export). Does not introduce a second ledger; writes remain in `wallet`.
 
-## 4. Backend Internal Architecture (Layered Design)
+## 3. Data Flow (Request / Response)
 
-The backend follows a **Layered Architecture** to ensure separation of concerns. This allows us to change the database engine or the API framework with minimal impact on business logic.
+Typical cycle for wallet actions:
 
-### 4.1 Layer Map & Dependencies
-Dependencies always point **inwards**. Outer layers (API) depend on inner layers (Services/Repositories), but the Domain (Entities) remains pure and independent.
+1. **Trigger:** The user submits a form or opens a protected page.
+2. **Request:** The browser sends HTTP **GET** or **POST** (with **CSRF** token on posts) to Django.
+3. **Routing:** `config.urls` dispatches to the appropriate view in `wallet`, `profiles`, or `reports`.
+4. **Auth:** `LoginRequiredMixin` or `@login_required` ensures identity where required.
+5. **Validation:** Django **Forms** (and model `full_clean()` / validators) enforce input rules.
+6. **Business logic:** Views orchestrate changes; financial mutations use **`transaction.atomic()`** where multiple rows must succeed or fail together.
+7. **Persistence:** Django ORM persists to PostgreSQL.
+8. **Response:** Redirect with **messages** framework and/or re-render template with context (errors, lists, aggregates).
+
+## 4. Backend Structure (Django-oriented)
+
+Dependencies point **inward**: URLconf → views → (forms / models) → ORM → database. Optional **service modules** inside an app (e.g. `reports/services.py`) may encapsulate query logic without bypassing the ORM.
 
 ```text
-    [ API Layer (app.py) ]
+    [ config/urls.py ]
              │
              ▼
-    [ Service Layer (services.py, auth.py) ]
+    [ App views + forms (wallet | profiles | reports) ]
              │
              ▼
-    [ Repository Layer (repository.py) ]
+    [ Django ORM (models, constraints, signals) ]
              │
              ▼
-    [ Infrastructure Layer (PostgreSQL) ]
-             │
-             └───────────▶ [ Domain Entities (entities.py) ]
-                                      │
-                                      ▼
-                           [ Schemas (models.py) ]
+    [ PostgreSQL ]
 ```
 
-| Layer | Component | Responsibility | Dependencies |
-| :--- | :--- | :--- | :--- |
-| **API** | `app.py` | HTTP Entry point, routing, and JSON responses. | Services, Models |
-| **Service** | `services.py`, `auth.py` | **Orchestration**: Business flows (Transfers) and **Identity Logic** (Authentication/Login). | Repositories, Entities, Models |
-| **Repository** | `repository.py` | **Data Access**: Handles SQL queries and maps DB rows to Domain Entities. | Models, Entities |
-| **Domain** | `entities.py` | **Core Logic**: Pure business rules (e.g., "how an account calculates its state"). | Models |
-| **Schemas** | `models.py` | **Data Contracts**: Pydantic models for validation and DTOs. | (None) |
+| Layer | Responsibility |
+| :--- | :--- |
+| **URLconf** | Map paths to views; include per-app `urls.py` as the project grows. |
+| **Views** | HTTP entry, permission checks, orchestration, response type. |
+| **Forms** | Request validation and user-facing field errors. |
+| **Models** | Schema, invariants, `CheckConstraint`, relations. |
+| **Templates** | Render HTML; no business calculations for money. |
 
-### 4.2 Why this Layer Map? (Justification)
-This specific design (API -> Service -> Repository -> DB) is the industry standard for robust applications because:
-1. **Decoupling**: The `Service Layer` doesn't know *how* data is saved (SQL or CSV), it only knows *what* it wants to do.
-2. **Testability**: We can test the `Service Layer` by "mocking" the `Repository` without needing a real database.
-3. **Maintainability**: If we move from PostgreSQL to another DB, we only change the `Repository` layer. The `Service` and `API` layers remain untouched.
-4. **Consistency**: The `Repository` ensures that everything coming out of the database is converted into a valid `Entity` or `Model` before reaching the rest of the app.
+### 4.1 Error handling
 
-### 4.3 Error Handling Policy
-
-To prevent generic "Internal Server Errors", the following policy is applied across layers:
-
-#### Exception Mapping
-| Layer | Action | Example |
-| :--- | :--- | :--- |
-| **Domain** | Raise semantic Python exceptions | `raise ValueError("Insufficient funds")` |
-| **Repository** | Raise data-related exceptions | `raise DBError("Connection failed")` |
-| **API** | Catch and convert to `HTTPException` | `raise HTTPException(status_code=400, detail=...)` |
-
----
+| Situation | Typical handling |
+| :--- | :--- |
+| Invalid form | Re-render template with form errors. |
+| Business rule violation | Message or error string; avoid silent failure. |
+| Missing resource | `Http404` where appropriate. |
 
 ## 5. Technology Stack
 
 | Technology | Rationale |
 | :--- | :--- |
-| **FastAPI** | High performance (ASGI), automatic Pydantic validation, and instant OpenAPI documentation. |
-| **PostgreSQL** | **(Phase 2 Upgrade)** Provides ACID compliance, relational integrity, and professional scalability. |
-| **Pydantic** | Strict schema enforcement and data validation (Fail-Fast principle). |
-| **uv** | Next-generation package manager for reproducible environments. |
-| **Docker** | Used to containerize the PostgreSQL instance for consistent development environments. |
-
----
+| **Django** | Integrated ORM, auth, forms, admin, and migration workflow for a cohesive monolith. |
+| **PostgreSQL** | ACID compliance, relational integrity, and scalable querying. |
+| **uv** | Reproducible environments and fast dependency management. |
+| **Docker** (Phase 4) | Consistent dev/prod parity and deployment artifacts. |
 
 ## 6. ADRs (Architecture Decision Records)
 
-| ID | Decision | Status | Key Justification (Summary) |
+| ID | Decision | Status | Key justification (summary) |
 | :--- | :--- | :--- | :--- |
-| [ADR-01](adr/01-use-fastapi-for-backend-integration.md) | **FastAPI** | Accepted | Quick and asynchronous integration with automatic validation. |
-| [ADR-02](adr/02-use-csv-for-initial-persistence.md) | **CSV/JSON** | Superado | Useful for rapid prototyping in Phase 1. Replaced by SQL in Phase 2. |
-| [ADR-03](adr/03-use-postgresql-for-persistent-storage.md) | **PostgreSQL** | Accepted | Needed for data integrity, ACID transactions, and professional scalability. |
+| [ADR-01](adr/01-use-fastapi-for-backend-integration.md) | FastAPI (Phase 1 history) | **Superseded** | Historical; product now uses Django only. |
+| [ADR-02](adr/02-use-csv-for-initial-persistence.md) | **CSV/JSON** | Superseded | Phase 1 prototyping; replaced by SQL/ORM. |
+| [ADR-03](adr/03-use-postgresql-for-persistent-storage.md) | **PostgreSQL** | Accepted | Integrity, ACID, relational model. |
+| [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md) | **Avatar storage** | Accepted | Local media in dev; durable object storage (or persistent volume) in cloud prod. |
 
 ---
-*Last Updated: 13 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*
+
+*Last updated: 23 March, 2026 — Django architecture; Phase 3.1 apps documented.*

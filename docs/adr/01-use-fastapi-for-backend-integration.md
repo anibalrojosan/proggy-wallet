@@ -1,7 +1,8 @@
 # ADR 01: Use FastAPI for Backend Integration
 
 ## Status
-Accepted
+
+**Superseded** — The shipping application uses **Django** as the sole server-side web framework from Phase 3 onward. This ADR remains a historical record of the Phase 1 backend choice. See [ARCHITECTURE.md](../ARCHITECTURE.md) for the current stack.
 
 ## Context
 In Phase 1 of the Proggy Wallet project, I needed to transition from standalone Python scripts to a connected web application. I required a backend framework that could bridge the gap between our Python logic (`auth.py`, `wallet.py`) and the jQuery-based frontend.

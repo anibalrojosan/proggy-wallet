@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-23] - Sprint 26: Documentation alignment and Phase 3.1 planning](#2026-03-23---sprint-26-documentation-alignment-and-phase-31-planning)
 - [[2026-03-11] - Sprint 25.5: Full-Layered Security and Integrity Implementation](#2026-03-11---sprint-255-full-layered-security-and-integrity-implementation)
 - [[2026-03-11] - Review: Data Integrity Layers in Django](#2026-03-11---review-data-integrity-layers-in-django)
 - [[2026-03-09] - Review: Service Layer Evolution & Django ORM Integration](#2026-03-09---review-service-layer-evolution--django-orm-integration)
@@ -52,6 +53,46 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-23] - Sprint 26: Documentation alignment and Phase 3.1 planning
+
+### Context & Goals
+Now that the Phase 3 wallet functionality is in place, the **canonical docs** (`PRD`, `ARCHITECTURE`, `DATABASE`, `MODULES`, `FLOWS`, `CLASS_DIAGRAM`, `ROADMAP`) had drifted from the Django-only reality and did not yet describe the next product increment. 
+
+I decided to update  the documentation on **Django + PostgreSQL** (no FastAPI in the shipping product narrative), **recording** the historical FastAPI choice as superseded in **ADR-01**, and **locking in a concrete plan** for **Phase 3.1** (`profiles` with `UserProfile`, `reports`/insights) before the **Phase 4** implementation (deployment and CI/CD) plus a **Phase 5** backlog for post-MVP ideas.
+
+### Technical Implementation
+*   **`docs/ROADMAP.md`:** 
+     - Removed FastAPI/Pydantic from the forward-looking tech table. 
+     - Rewrote Phase 2 in generic OOP/PostgreSQL terms. 
+     - Added **Phase 3.1** (deliverables checklist for `profiles` and `reports`, `MEDIA_*`, CSV export intent) and **Phase 5** (future apps: preferences, notifications, support, budgets, etc.). 
+     - Kept **Phase 4** as CI/CD and cloud, with a pointer to avatar/media strategy for production.
+*   **`docs/PRD.md` & `docs/ARCHITECTURE.md`:** 
+     - Reframed the product around **Django MVT**, session-based flows, and planned apps. 
+     - Replaced the old FastAPI/service/repository stack diagram with a Django-oriented layer description. 
+     - Updated the ADR index to include **ADR-04** and mark **ADR-01** as **Superseded**.
+*   **`docs/DATABASE.md`:** 
+     - Extended the ERD with planned **`UserProfile`** (`OneToOne` to `User`).
+     - Documented that **`reports` v1** is expected to add **no new tables** (read-only over `wallet`).
+*   **`docs/MODULES.md` & `docs/FLOWS.md`:** 
+     - Added planned folder layout for `profiles/` and `reports/`. 
+     - Added dependency table (`reports` read-only on `wallet`). 
+     - Added illustrative future URL prefixes. 
+     - Added Mermaid flows for profile/avatar, insights, and CSV export.
+*   **`docs/CLASS_DIAGRAM.md`:** 
+     - Replaced Phase-2/Pydantic-centric narrative with **ORM-aligned** classes including planned **`UserProfile`**.
+*   **`docs/adr/04-user-avatar-storage-local-vs-object-storage.md`:** 
+     - New ADR — **local `MEDIA_ROOT` in development** vs **object storage or persistent volumes in production** to avoid silent file loss on ephemeral PaaS filesystems during Phase 4.
+
+### 💡 Deep Dive: Documentation as contract for the next slice of work
+Treating **docs as the contract** for Phase 3.1 reduces thrash when implementing `profiles` and `reports`: the **dependency rule** (reports never writes a parallel ledger) and **ADR-04** (where avatar bytes live per environment) are decided *before* the implementation, so settings and deployment checklists in Phase 4 stay traceable. Superseding **ADR-01** instead of deleting it preserves audit history while making the **current** stack unambiguous for readers.
+
+### Next Steps
+*   **Implement Phase 3.1:** Scaffold `profiles` (`UserProfile`, forms, templates, `MEDIA_URL` / `MEDIA_ROOT` in dev) and `reports` (aggregations, UI, user-scoped CSV export); register apps in `config/settings.py` and include URLconfs.
+*   **Phase 4:** `Dockerfile`, enhance the `docker-compose`, GitHub Actions (Ruff + Pytest), then cloud deploy with **media** configuration aligned to **ADR-04**.
+*   **Optional:** Pull items from **Phase 5** in `ROADMAP.md` into future sprints when scope is frozen per feature.
 
 ---
 

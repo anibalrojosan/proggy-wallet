@@ -2,18 +2,19 @@
 
 This document outlines the strategic technical progression from a basic Frontend/Python prototype to a professional Full-Stack Enterprise Application. It serves as a guide for development, tooling, and infrastructure scaling.
 
+**Current product stack:** **Django** (MVT), **PostgreSQL**, server-rendered templates (Bootstrap 5 / jQuery). No separate FastAPI service in scope for the wallet product.
+
 ## Tech Stack
 
 | Category | Tool / Technology | Purpose | Implementation Phase |
 | --- | --- | --- | --- |
 | **Languages** | **HTML5 / CSS3** | Structure and responsive styling. | Phase 1 |
 |  | **JavaScript (ES6+)** | Client-side interactivity. | Phase 1 |
-|  | **Python 3.12+** | Backend logic and data processing. | Phase 1 - 4 |
-|  | **SQL** | Relational database querying. | Phase 2 - 3 |
+|  | **Python 3.12+** | Backend logic and data processing. | Phase 1 - 5 |
+|  | **SQL** | Relational database querying. | Phase 2 - 4 |
 | **Frameworks & Libraries** | **Bootstrap 5** | CSS Framework for responsive UI components. | Phase 1 |
 |  | **jQuery** | DOM manipulation and visual effects. | Phase 1 |
-|  | **Django** | High-level Python Web Framework (MVC/MVT). | Phase 3 |
-|  | **Pydantic** | Data validation and schema management using Python type hints. | Phase 2 |
+|  | **Django** | Web framework (MVT), ORM, auth, forms, admin. | Phase 3+ |
 | **Tooling & Quality (DX)** | **uv** | Blazing fast Python package and project manager (replaces `pip`/`venv`). | **All Phases** |
 |  | **Ruff** | Extremely fast Python linter and formatter (strict **PEP 8** compliance). | **All Phases** |
 |  | **Pytest** | Framework for scalable and simple unit/integration testing. | Phase 2 - 4 |
@@ -72,10 +73,34 @@ This document outlines the strategic technical progression from a basic Frontend
 
 ### Framework Integration
 
-* **MVC Architecture:** Port Python logic to **Django's MVT** (Model-View-Template) pattern.
-* **ORM Implementation:** Use Django ORM to interact with PostgreSQL, removing raw SQL queries.
-* **Authentication:** Implement Django's built-in Auth System for secure login and session management.
-* **Connectivity:** Connect existing HTML forms to Django Views.
+* **MVC Architecture:** **Django MVT** — views, templates, and URL routing.
+* **ORM Implementation:** Django ORM for PostgreSQL (models, constraints, migrations).
+* **Authentication:** Django’s built-in auth (login, sessions, password hashing).
+* **Connectivity:** HTML forms and class-based/function views for deposits, transfers, and history.
+
+---
+
+## 🟣 Phase 3.1: Profiles & Insights (next implementation)
+
+**Goal:** Extend the product with **`profiles`** and **`reports`** apps without changing core ledger rules in `wallet`.
+
+### `profiles` app
+
+* **`UserProfile`** model (`OneToOne` to `User`): editable display fields (e.g. first/last name or display name — align with forms), optional bio, **avatar** upload.
+* Views and templates for **view/edit profile**; validation and size/type limits for images.
+* Avatar storage strategy: see [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md) (local dev vs object storage in production).
+
+### `reports` app (insights)
+
+* **Read-only** aggregations over existing `wallet` data (no duplicate source of truth for balances).
+* UI: summaries by period, simple charts (as appropriate), filters consistent with history semantics.
+* **Export:** at minimum **CSV** download of the user’s scoped transaction set (or summary export — document in PRD when implemented).
+
+### Deliverables checklist
+
+* [ ] `profiles` registered in `INSTALLED_APPS`, migrations, URLs, templates.
+* [ ] `reports` registered, URLs, templates, tests for aggregation/export boundaries.
+* [ ] `MEDIA_ROOT` / `MEDIA_URL` configured for development; production path documented per ADR-04.
 
 ---
 
@@ -95,7 +120,24 @@ This document outlines the strategic technical progression from a basic Frontend
 
 * **Cloud Deployment:**
     * Configure automated deployment to **Render** or **Railway** connected to the GitHub repository.
+    * Align **static and media** configuration with ADR-04 for avatars where applicable.
 
-    ---
+---
 
-*Last updated: 16 February, 2026 - Phase 2 - Sprint 16: Database Design & Setup*
+## ⚪ Phase 5: Future improvements (post-MVP)
+
+**Goal:** Capture product ideas **not** scheduled for Phase 3.1. Scope here is indicative; each item may become its own app or module later.
+
+| Area | Indicative scope |
+| --- | --- |
+| **Preferences / settings** | Display currency, locale, date/number formatting; optional theme. |
+| **Notifications** | In-app and/or email for transfers, security events. |
+| **Support / help** | FAQ, contact form, lightweight tickets. |
+| **Security extras** | Session management UX, 2FA hooks, audit-friendly settings. |
+| **Budgets / categories** | Labels on transactions, monthly limits, spending views. |
+| **External accounts / cards** | Linked payment methods metadata (educational / non-PCI scope). |
+| **Formal statements** | Period “statement” PDFs or printable views (beyond ad-hoc CSV). |
+
+---
+
+*Last updated: 23 March, 2026 — Phase 3 complete; Phase 3.1 planned (`profiles`, `reports`).*

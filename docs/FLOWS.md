@@ -124,4 +124,74 @@ sequenceDiagram
 
 ---
 
-*Last updated: 23 March, 2026 — Phase 3; aligned with `config/urls.py` and `wallet/views.py`.*
+## 6. Planned flows — Phase 3.1 (`profiles`, `reports`)
+
+The following are **not yet implemented**; paths are illustrative (see [MODULES.md](MODULES.md)).
+
+### 6.1 View / edit profile and avatar
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant View as profiles.views
+    participant Form as ProfileForm
+    participant Storage as FileSystemStorage or S3
+    participant DB as PostgreSQL
+
+    User->>Browser: Open profile / edit form
+    Browser->>View: GET /profile/ (example path)
+    View->>DB: Load User + UserProfile
+    View-->>Browser: Render form
+    User->>Browser: Submit profile / optional image
+    Browser->>View: POST /profile/ (CSRF, multipart if file)
+    View->>Form: is_valid()
+    alt Valid
+        View->>DB: Save User fields + UserProfile
+        opt Avatar present
+            View->>Storage: Save under MEDIA per ADR-04
+        end
+        View-->>Browser: Redirect + success message
+    else Invalid
+        View-->>Browser: Re-render with errors
+    end
+```
+
+### 6.2 Insights dashboard (read-only)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant View as reports.views
+    participant ORM as Django ORM
+    participant DB as PostgreSQL
+
+    User->>Browser: Open insights page
+    Browser->>View: GET /insights/ (example path)
+    View->>View: LoginRequiredMixin
+    View->>ORM: Aggregate/filter wallet.Transaction for request.user
+    ORM->>DB: SELECT (read-only)
+    DB-->>View: Rows / aggregates
+    View-->>Browser: Render reports template (charts/tables)
+```
+
+### 6.3 CSV export (user-scoped)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant View as reports.views
+    participant DB as PostgreSQL
+
+    User->>Browser: Request export (link or POST)
+    Browser->>View: GET export endpoint with same scope as UI filters
+    View->>View: LoginRequiredMixin, build queryset for current user only
+    View->>DB: Read transactions (or summary rows)
+    View-->>Browser: text/csv response (attachment)
+```
+
+---
+
+*Last updated: 23 March, 2026 — Phase 3 implemented; Phase 3.1 planned.*
