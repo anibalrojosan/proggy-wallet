@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import include, path
@@ -21,11 +22,11 @@ from django.urls import include, path
 from wallet import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('accounts/', include('django.contrib.auth.urls')),
-    path('menu/', views.menu, name='menu'),
-    path('deposit/', views.deposit, name='deposit'),
-    path('transfer/', views.transfer, name='transfer'),
-    path('history/', views.TransactionHistoryView.as_view(), name='history'),
-    path('', lambda request: redirect('menu'), name='root_redirect'),
+    path("admin/", admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("menu/", views.menu, name="menu"),
+    path("deposit/", views.deposit, name="deposit"),
+    path("transfer/", views.transfer, name="transfer"),
+    path("history/", views.TransactionHistoryView.as_view(), name="history"),
+    path("", lambda request: redirect("menu"), name="root_redirect"),
 ]
