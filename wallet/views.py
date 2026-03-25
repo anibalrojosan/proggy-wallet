@@ -1,11 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.shortcuts import redirect, render
-from django.core.paginator import Paginator
-from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import redirect, render
+from django.views.generic import ListView
 
 from .forms import DepositForm, TransferForm
 from .models import Transaction
@@ -107,7 +106,7 @@ class TransactionHistoryView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(to_user=self.request.user)
         elif filter_type == 'expense':
             queryset = queryset.filter(from_user=self.request.user)
-        
+
         return queryset
 
     def get_context_data(self, **kwargs):

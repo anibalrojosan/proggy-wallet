@@ -37,9 +37,14 @@
                 <ul class="navbar-nav ms-auto align-items-center">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <span class="nav-link text-white me-3">
-                                <i class="bi bi-person-circle"></i> Welcome, <strong>{{ user.username }}</strong>
-                            </span>
+                            <a class="nav-link text-white me-3 d-flex align-items-center" href="{% url 'profiles:profile_detail' %}">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
+                                {% else %}
+                                    <i class="bi bi-person-circle me-2"></i>
+                                {% endif %}
+                                Welcome,&nbsp;<strong>{{ user.username }}</strong>
+                            </a>
                         </li>
                         <li class="nav-item">
                             <form action="{% url 'logout' %}" method="post" class="d-inline">
