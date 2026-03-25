@@ -34,3 +34,7 @@ SPRINTS.md
 improvements.md
 test_scripts/
 scripts/
+
+# Media files
+media/**/*
+!media/**/.gitkeep
