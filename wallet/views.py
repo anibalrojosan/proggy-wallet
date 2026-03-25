@@ -12,14 +12,15 @@ from .models import Transaction
 
 @login_required
 def menu(request):
-    return render(request, 'wallet/menu.html')
+    return render(request, "wallet/menu.html")
+
 
 @login_required
 def deposit(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = DepositForm(request.POST)
         if form.is_valid():
-            amount = form.cleaned_data['amount']
+            amount = form.cleaned_data["amount"]
             try:
                 with transaction.atomic():
                     # Update account balance
@@ -31,29 +32,30 @@ def deposit(request):
                     Transaction.objects.create(
                         to_user=request.user,
                         amount=amount,
-                        type='deposit',
+                        type="deposit",
                         balance_after=account.balance,
-                        description='Deposit via web'
+                        description="Deposit via web",
                     )
-                messages.success(request, f'Successfully deposited ${amount}!')
-                return redirect('menu')
+                messages.success(request, f"Successfully deposited ${amount}!")
+                return redirect("menu")
             except Exception as e:
-                messages.error(request, f'An error occurred: {str(e)}')
+                messages.error(request, f"An error occurred: {str(e)}")
         else:
             for error in form.non_field_errors():
                 messages.error(request, error)
     else:
         form = DepositForm()
 
-    return render(request, 'wallet/deposit.html', {'form': form})
+    return render(request, "wallet/deposit.html", {"form": form})
+
 
 @login_required
 def transfer(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = TransferForm(request.POST, user=request.user)
         if form.is_valid():
-            to_user = form.cleaned_data['to_user']
-            amount = form.cleaned_data['amount']
+            to_user = form.cleaned_data["to_user"]
+            amount = form.cleaned_data["amount"]
 
             try:
                 with transaction.atomic():
@@ -72,39 +74,40 @@ def transfer(request):
                         from_user=request.user,
                         to_user=to_user,
                         amount=amount,
-                        type='transfer',
+                        type="transfer",
                         balance_after=from_account.balance,
-                        description=f'Transfer to {to_user.username}'
+                        description=f"Transfer to {to_user.username}",
                     )
-                messages.success(request, f'Successfully sent ${amount} to {to_user.username}!')
-                return redirect('menu')
+                messages.success(request, f"Successfully sent ${amount} to {to_user.username}!")
+                return redirect("menu")
             except Exception as e:
-                messages.error(request, f'An error occurred: {str(e)}')
+                messages.error(request, f"An error occurred: {str(e)}")
         else:
             # If form is invalid, errors will be shown in the template
             pass
     else:
         form = TransferForm(user=request.user)
 
-    return render(request, 'wallet/sendmoney.html', {'form': form})
+    return render(request, "wallet/sendmoney.html", {"form": form})
+
 
 class TransactionHistoryView(LoginRequiredMixin, ListView):
     model = Transaction
-    template_name = 'wallet/transactions.html'
-    context_object_name = 'page_obj'
+    template_name = "wallet/transactions.html"
+    context_object_name = "page_obj"
     paginate_by = 10
 
     def get_queryset(self):
         # Get the base queryset (all transactions of the user)
-        queryset = Transaction.objects.filter(
-            Q(from_user=self.request.user) | Q(to_user=self.request.user)
-        ).order_by('-created_at')
+        queryset = Transaction.objects.filter(Q(from_user=self.request.user) | Q(to_user=self.request.user)).order_by(
+            "-created_at"
+        )
 
         # Apply the filter if it exists in the URL
-        filter_type = self.request.GET.get('filter')
-        if filter_type == 'income':
+        filter_type = self.request.GET.get("filter")
+        if filter_type == "income":
             queryset = queryset.filter(to_user=self.request.user)
-        elif filter_type == 'expense':
+        elif filter_type == "expense":
             queryset = queryset.filter(from_user=self.request.user)
 
         return queryset
@@ -112,5 +115,5 @@ class TransactionHistoryView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         # Pass 'current_filter' to the template for the buttons
         context = super().get_context_data(**kwargs)
-        context['current_filter'] = self.request.GET.get('filter')
+        context["current_filter"] = self.request.GET.get("filter")
         return context
