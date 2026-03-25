@@ -25,6 +25,9 @@
                         <p>{{ profile.bio|default:"No bio available." }}</p>
                         <small class="text-muted">Member since: {{ profile.created_at|date:"M d, Y" }}</small>
                     </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'profiles:profile_edit' %}" class="btn btn-primary">Edit Profile</a>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Edit Profile</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- User Fields (First/Last Name) -->
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">First Name</label>
+                                {{ form.first_name }}
+                                {{ form.first_name.errors }}
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Last Name</label>
+                                {{ form.last_name }}
+                                {{ form.last_name.errors }}
+                            </div>
+                        </div>
+
+                        <!-- Bio Field -->
+                        <div class="mb-3">
+                            <label class="form-label">Biography</label>
+                            {{ form.bio }}
+                            {{ form.bio.errors }}
+                        </div>
+
+                        <!-- Avatar Field -->
+                        <div class="mb-3">
+                            <label class="form-label">Avatar</label>
+                            {% if profile.avatar %}
+                                <div class="mb-2">
+                                    <img src="{{ profile.avatar.url }}" alt="Current Avatar" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                    <small class="text-muted ms-2">Current image</small>
+                                </div>
+                            {% endif %}
+                            {{ form.avatar }}
+                            {{ form.avatar.errors }}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'profiles:profile_detail' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
