@@ -26,11 +26,11 @@ class ProfileForm(forms.ModelForm):
         if avatar:
             limit = 1024 * 1024 * 2  # 2MB
             if avatar.size > limit:
-                raise ValidationError("Avatar size must be less than 2MB")
+                raise ValidationError("Image is too large. The maximum size is 2MB.")
 
             extension = avatar.name.split(".")[-1].lower()
             if extension not in ["jpg", "jpeg", "png", "webp"]:
-                raise ValidationError("Avatar must be a JPG, JPEG, PNG, or WEBP file")
+                raise ValidationError("Image must be a JPG, JPEG, PNG, or WEBP file")
 
         return avatar
 
