@@ -1,9 +1,12 @@
 from decimal import Decimal
-from django.test import TestCase
+
 from django.contrib.auth.models import User
-from django.db import IntegrityError
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
+from django.test import TestCase
+
 from wallet.models import Account, Transaction
+
 
 class WalletIntegrityTest(TestCase):
     def setUp(self):
