@@ -136,3 +136,9 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
 ]
+
+
+# Media files (User uploaded content)
+# Reference: ADR-04 for production strategy (Phase 4)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
