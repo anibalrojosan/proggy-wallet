@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-25] - Sprint: User Profiles Infrastructure & Management](#2026-03-25---sprint-user-profiles-infrastructure--management)
 - [[2026-03-23] - Sprint 26: Documentation alignment and Phase 3.1 planning](#2026-03-23---sprint-26-documentation-alignment-and-phase-31-planning)
 - [[2026-03-11] - Sprint 25.5: Full-Layered Security and Integrity Implementation](#2026-03-11---sprint-255-full-layered-security-and-integrity-implementation)
 - [[2026-03-11] - Review: Data Integrity Layers in Django](#2026-03-11---review-data-integrity-layers-in-django)
@@ -53,6 +54,32 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-25] - Sprint: User Profiles Infrastructure & Management
+
+### Context & Goals
+The primary goal was to establish a robust user profile system, allowing users to manage their personal information and identity within the application. This involved creating the underlying data structures, handling media storage for avatars, and implementing the necessary views and forms for profile management.
+
+### Technical Implementation
+- **App Creation:** Initialized the `profiles` Django application to decouple user metadata from the core authentication logic.
+- **Data Modeling:** Implemented the `UserProfile` model with a `OneToOne` relationship to Django's `User` model, including `bio`, `avatar`, and audit fields (`created_at`, `updated_at`).
+- **Media Handling:** Configured `MEDIA_URL` and `MEDIA_ROOT` for local development and enabled media serving in `urls.py`.
+- **Form Logic & Validation:** Created `ProfileForm` with custom image validation (2MB limit and format checks) and integrated `first_name`/`last_name` fields from the `User` model.
+- **Views & Templates:** 
+    - Implemented `ProfileDetailView` and `ProfileUpdateView` using Django's Class-Based Views.
+    - Developed responsive templates using **Bootstrap 5**, including multipart form support for image uploads.
+- **Global Integration:** Integrated the user avatar and profile links into the global navigation bar (`base.html`).
+- **Quality Assurance:** Added a suite of automated tests (`ProfileTests`) covering authorization, auto-creation of profiles, and image validation logic.
+
+### 💡 Deep Dive: One-to-One Model Signals vs. Lazy Creation
+During this sprint, I focused on ensuring every user has a profile. Instead of relying solely on post-save signals (which can sometimes be brittle during bulk operations), I implemented a pattern in the `ProfileDetailView` to ensure a `UserProfile` is auto-created on first access if it doesn't exist. This guarantees data integrity when navigating the UI while keeping the `User` model lean.
+
+### Next Steps
+- Implement password change and account settings functionality.
+- Migrate local media storage to an S3-compatible object storage (as per ADR-04).
+- Optional: Add frontend cropping functionality for avatars to improve UX.
 
 ---
 
