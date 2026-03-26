@@ -66,6 +66,83 @@ def get_monthly_volume_report(user, *, date_from=None, date_to=None, flow_filter
     )
 
 
+def get_monthly_report_rows(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
+    """
+    Standardized monthly rows for tables and charts: month, inflow, outflow, count.
+    When flow_filter is None, splits inflow (to_user) vs outflow (from_user) per month
+    using date/type filters only (not flow), so the chart shows both series.
+    When flow_filter is income or expense, amounts appear on the matching side only.
+    """
+    if flow_filter == "income":
+        qs = get_monthly_volume_report(user, date_from=date_from, date_to=date_to, flow_filter="income", tx_type=tx_type)
+        rows_inc = []
+        for r in qs:
+            inf = r["total_amount"] or 0
+            rows_inc.append(
+                {
+                    "month": r["month"],
+                    "inflow": inf,
+                    "outflow": 0,
+                    "net": inf,
+                    "count": r["count"],
+                }
+            )
+        return rows_inc
+    if flow_filter == "expense":
+        qs = get_monthly_volume_report(user, date_from=date_from, date_to=date_to, flow_filter="expense", tx_type=tx_type)
+        rows_exp = []
+        for r in qs:
+            ouf = r["total_amount"] or 0
+            rows_exp.append(
+                {
+                    "month": r["month"],
+                    "inflow": 0,
+                    "outflow": ouf,
+                    "net": -ouf,
+                    "count": r["count"],
+                }
+            )
+        return rows_exp
+
+    base = _filtered_user_transactions(user, date_from=date_from, date_to=date_to, flow_filter=None, tx_type=tx_type)
+    in_map = {}
+    for r in (
+        base.filter(to_user=user)
+        .annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(total=Sum("amount"), cnt=Count("id"))
+    ):
+        if r["month"] is not None:
+            in_map[r["month"]] = {"inflow": r["total"] or 0, "in_cnt": r["cnt"]}
+    out_map = {}
+    for r in (
+        base.filter(from_user=user)
+        .annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(total=Sum("amount"), cnt=Count("id"))
+    ):
+        if r["month"] is not None:
+            out_map[r["month"]] = {"outflow": r["total"] or 0, "out_cnt": r["cnt"]}
+
+    all_months = sorted(set(in_map.keys()) | set(out_map.keys()), reverse=True)
+    rows = []
+    for m in all_months:
+        i = in_map.get(m, {})
+        o = out_map.get(m, {})
+        inf = i.get("inflow", 0)
+        ouf = o.get("outflow", 0)
+        rows.append(
+            {
+                "month": m,
+                "inflow": inf,
+                "outflow": ouf,
+                "net": inf - ouf,
+                "count": i.get("in_cnt", 0) + o.get("out_cnt", 0),
+            }
+        )
+    return rows
+
+
 def get_transaction_type_breakdown(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
     """
     Break down activity by transaction type (deposit, transfer, withdrawal).

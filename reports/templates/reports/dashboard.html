@@ -1,81 +1,227 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Reports — {{ user.username }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div>
     <h1 class="h3 mb-3">Reports — {{ user.username }}</h1>
 
-    <form method="get" class="card shadow-sm mb-4">
-        <div class="card-body row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label" for="id_date_from">From</label>
-                {{ filter_form.date_from }}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">Filters</div>
+        <form method="get" class="card-body border-0 pb-0">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="id_date_from">From</label>
+                    {{ filter_form.date_from }}
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="id_date_to">To</label>
+                    {{ filter_form.date_to }}
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label" for="id_filter">{{ filter_form.filter.label }}</label>
+                    {{ filter_form.filter }}
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label" for="id_tx_type">{{ filter_form.tx_type.label }}</label>
+                    {{ filter_form.tx_type }}
+                </div>
+                <div class="col-12 col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Apply</button>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label" for="id_date_to">To</label>
-                {{ filter_form.date_to }}
-            </div>
-            <div class="col-md-2">
-                <label class="form-label" for="id_filter">{{ filter_form.filter.label }}</label>
-                {{ filter_form.filter }}
-            </div>
-            <div class="col-md-2">
-                <label class="form-label" for="id_tx_type">{{ filter_form.tx_type.label }}</label>
-                {{ filter_form.tx_type }}
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Apply</button>
-            </div>
-        </div>
+        </form>
         {% if filter_form.errors %}
-        <div class="card-footer text-danger small">
+        <div class="card-footer text-danger small border-top-0 pt-0">
             {% if filter_form.non_field_errors %}{{ filter_form.non_field_errors }}{% endif %}
             {% for field in filter_form %}
                 {% for err in field.errors %}<div>{{ field.label }}: {{ err }}</div>{% endfor %}
             {% endfor %}
         </div>
         {% endif %}
-    </form>
+    </div>
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <h2 class="h5">Summary</h2>
-            <p class="mb-1">Inflow: ${{ summary.total_inflow }}</p>
-            <p class="mb-1">Outflow: ${{ summary.total_outflow }}</p>
-            <p class="mb-1">Net flow: ${{ summary.net_flow }}</p>
-            <p class="mb-0 text-muted">Transaction count: {{ summary.transaction_count }}</p>
+    {% if not user_has_transactions %}
+    <div class="alert alert-light border mb-4" role="status">
+        <i class="bi bi-info-circle me-2"></i>No transactions yet. Make a deposit or transfer to see reports here.
+    </div>
+    {% elif summary.transaction_count == 0 and filter_applied %}
+    <div class="alert alert-light border mb-4" role="status">
+        <i class="bi bi-funnel me-2"></i>No results for these filters. Try widening the date range, setting Flow to All, or clearing the transaction type.
+    </div>
+    {% endif %}
+
+    {% if summary.transaction_count > 0 %}
+    {% if flow_filter == "income" %}
+    <p class="small text-muted mb-3">Showing <strong>income</strong> only. Net flow is hidden because it would match inflow.</p>
+    {% elif flow_filter == "expense" %}
+    <p class="small text-muted mb-3">Showing <strong>expense</strong> only. Net flow is hidden because it would mirror outflow for this view.</p>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-lg-{% if show_net_flow %}3{% else %}4{% endif %}">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h2 class="h6 text-muted text-uppercase small mb-2">Inflow</h2>
+                    <p class="h4 mb-0 fw-bold text-success">${{ summary.total_inflow }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-{% if show_net_flow %}3{% else %}4{% endif %}">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h2 class="h6 text-muted text-uppercase small mb-2">Outflow</h2>
+                    <p class="h4 mb-0 fw-bold text-danger">${{ summary.total_outflow }}</p>
+                </div>
+            </div>
+        </div>
+        {% if show_net_flow %}
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h2 class="h6 text-muted text-uppercase small mb-2">Net flow</h2>
+                    <p class="h4 mb-0 fw-bold">${{ summary.net_flow }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-12 col-md-6 col-lg-{% if show_net_flow %}3{% else %}4{% endif %}">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h2 class="h6 text-muted text-uppercase small mb-2">Transactions</h2>
+                    <p class="h4 mb-0 fw-bold">{{ summary.transaction_count }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <h2 class="h5">Monthly volume</h2>
-            {% if monthly_volume %}
-            <ul class="list-unstyled mb-0 small">
-                {% for row in monthly_volume %}
-                <li>{{ row.month|date:"Y-m" }} — ${{ row.total_amount }} ({{ row.count }} transactions)</li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted mb-0">No data for this filter.</p>
-            {% endif %}
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold">Monthly activity</div>
+                <div class="card-body">
+                    {% if show_net_flow %}
+                    <p class="small text-muted mb-3">Inflow and outflow per month (gross amounts, not a single mixed total).</p>
+                    {% endif %}
+                    {% if chart_monthly.labels %}
+                    <div style="max-height: 320px;">
+                        <canvas id="chart-monthly" aria-label="Monthly activity chart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                        <p class="mb-0">No data for this filter. Try widening the date range or clearing filters.</p>
+                    </div>
+                    {% endif %}
+                    {% if monthly_volume_rows %}
+                    <details class="mt-3">
+                        <summary class="small text-primary" style="cursor: pointer;">Show monthly table</summary>
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Month</th>
+                                        {% if show_net_flow %}
+                                        <th scope="col" class="text-end">Inflow</th>
+                                        <th scope="col" class="text-end">Outflow</th>
+                                        <th scope="col" class="text-end">Net</th>
+                                        {% elif flow_filter == "income" %}
+                                        <th scope="col" class="text-end">Inflow</th>
+                                        {% elif flow_filter == "expense" %}
+                                        <th scope="col" class="text-end">Outflow</th>
+                                        {% endif %}
+                                        <th scope="col" class="text-end">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in monthly_volume_rows %}
+                                    <tr>
+                                        <td>{{ row.month|date:"Y-m" }}</td>
+                                        {% if show_net_flow %}
+                                        <td class="text-end font-monospace text-success">${{ row.inflow }}</td>
+                                        <td class="text-end font-monospace text-danger">${{ row.outflow }}</td>
+                                        <td class="text-end font-monospace">${{ row.net }}</td>
+                                        {% elif flow_filter == "income" %}
+                                        <td class="text-end font-monospace">${{ row.inflow }}</td>
+                                        {% elif flow_filter == "expense" %}
+                                        <td class="text-end font-monospace">${{ row.outflow }}</td>
+                                        {% endif %}
+                                        <td class="text-end">{{ row.count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold">By type</div>
+                <div class="card-body">
+                    {% if show_type_chart %}
+                    <div style="max-height: 280px;">
+                        <canvas id="chart-types" aria-label="Transaction types chart"></canvas>
+                    </div>
+                    {% elif type_breakdown_rows %}
+                    <p class="text-muted small mb-2">Breakdown chart is hidden when only one type appears in this view.</p>
+                    <p class="mb-0">
+                        All activity here is
+                        <span class="badge {% if type_breakdown_rows.0.type == 'deposit' %}bg-success{% elif type_breakdown_rows.0.type == 'transfer' %}bg-primary{% else %}bg-secondary{% endif %}">
+                            {{ type_breakdown_rows.0.type|title }}
+                        </span>
+                        <span class="font-monospace">(${{ type_breakdown_rows.0.total }})</span>
+                    </p>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                        <p class="mb-0">No data for this filter. Try widening the date range or clearing filters.</p>
+                    </div>
+                    {% endif %}
+                    {% if type_breakdown_rows %}
+                    <details class="mt-3">
+                        <summary class="small text-primary" style="cursor: pointer;">Show type table</summary>
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Type</th>
+                                        <th scope="col" class="text-end">Amount</th>
+                                        <th scope="col" class="text-end">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in type_breakdown_rows %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge {% if row.type == 'deposit' %}bg-success{% elif row.type == 'transfer' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                {{ row.type|title }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end font-monospace">${{ row.total }}</td>
+                                        <td class="text-end">{{ row.count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="h5">By type</h2>
-            {% if type_breakdown %}
-            <ul class="list-unstyled mb-0 small">
-                {% for row in type_breakdown %}
-                <li>{{ row.type|title }} — ${{ row.total }} ({{ row.count }} transactions)</li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted mb-0">No data for this filter.</p>
-            {% endif %}
-        </div>
-    </div>
+    {{ chart_monthly|json_script:"reports-monthly-data" }}
+    {{ chart_types|json_script:"reports-types-data" }}
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/reports_dashboard.js' %}"></script>
 {% endblock %}
