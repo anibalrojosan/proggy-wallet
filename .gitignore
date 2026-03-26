@@ -29,11 +29,16 @@ backend/data/*.json
 .env
 .coverage
 
+# Django
+db.sqlite3
+staticfiles/
+
 # Scripts and extra files
 SPRINTS.md
 improvements.md
 test_scripts/
 scripts/
+DEPLOY.md
 
 # Media files
 media/**/*

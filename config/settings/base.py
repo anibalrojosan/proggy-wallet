@@ -20,7 +20,7 @@ env = environ.Env(
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,7 +32,8 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
+# DEBUG is now handled in local.py and production.py
+# DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = []
 
@@ -84,10 +85,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-DATABASES = {
-    "default": env.db("DB_URL"),
-}
+# DATABASES is now handled in local.py and production.py
+# DATABASES = {
+#     "default": env.db("DB_URL"),
+# }
 
 
 # Password validation
