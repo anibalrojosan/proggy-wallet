@@ -32,6 +32,7 @@ urlpatterns = [
     path("history/", views.TransactionHistoryView.as_view(), name="history"),
     path("", lambda request: redirect("menu"), name="root_redirect"),
     path("profile/", include("profiles.urls", namespace="profiles")),
+    path("reports/", include("reports.urls", namespace="reports")),
 ]
 
 if settings.DEBUG:
