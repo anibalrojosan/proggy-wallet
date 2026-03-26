@@ -1,4 +1,81 @@
-<!-- Quick example to verify data -->
-<h1>Reports of {{ user.username }}</h1>
-<p>Net Flow: ${{ summary.net_flow }}</p>
-<p>Total Transactions: {{ summary.transaction_count }}</p>
+{% extends 'base.html' %}
+
+{% block title %}Reports — {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 mb-3">Reports — {{ user.username }}</h1>
+
+    <form method="get" class="card shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="id_date_from">From</label>
+                {{ filter_form.date_from }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="id_date_to">To</label>
+                {{ filter_form.date_to }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="id_filter">{{ filter_form.filter.label }}</label>
+                {{ filter_form.filter }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="id_tx_type">{{ filter_form.tx_type.label }}</label>
+                {{ filter_form.tx_type }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Apply</button>
+            </div>
+        </div>
+        {% if filter_form.errors %}
+        <div class="card-footer text-danger small">
+            {% if filter_form.non_field_errors %}{{ filter_form.non_field_errors }}{% endif %}
+            {% for field in filter_form %}
+                {% for err in field.errors %}<div>{{ field.label }}: {{ err }}</div>{% endfor %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </form>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5">Summary</h2>
+            <p class="mb-1">Inflow: ${{ summary.total_inflow }}</p>
+            <p class="mb-1">Outflow: ${{ summary.total_outflow }}</p>
+            <p class="mb-1">Net flow: ${{ summary.net_flow }}</p>
+            <p class="mb-0 text-muted">Transaction count: {{ summary.transaction_count }}</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5">Monthly volume</h2>
+            {% if monthly_volume %}
+            <ul class="list-unstyled mb-0 small">
+                {% for row in monthly_volume %}
+                <li>{{ row.month|date:"Y-m" }} — ${{ row.total_amount }} ({{ row.count }} transactions)</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">No data for this filter.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="h5">By type</h2>
+            {% if type_breakdown %}
+            <ul class="list-unstyled mb-0 small">
+                {% for row in type_breakdown %}
+                <li>{{ row.type|title }} — ${{ row.total }} ({{ row.count }} transactions)</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">No data for this filter.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

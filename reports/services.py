@@ -7,19 +7,36 @@ from django.utils import timezone
 from wallet.models import Transaction
 
 
-def get_user_financial_summary(user):
+def _filtered_user_transactions(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
+    """
+    User-involved transactions with optional date range, flow (income/expense), and type filters.
+    flow_filter matches wallet history: income = to_user only, expense = from_user only.
+
+    Returns a queryset ready for aggregate() and annotate().
+    """
+    qs = Transaction.objects.filter(Q(from_user=user) | Q(to_user=user))
+    if date_from is not None:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to is not None:
+        qs = qs.filter(created_at__date__lte=date_to)
+    if tx_type:
+        qs = qs.filter(type=tx_type)
+    if flow_filter == "income":
+        qs = qs.filter(to_user=user)
+    elif flow_filter == "expense":
+        qs = qs.filter(from_user=user)
+    return qs
+
+
+def get_user_financial_summary(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
     """
     Calculates key metrics based on the user's money flow.
     Considers deposits and transfers received as inflows,
     and withdrawals and transfers sent as outflows.
     """
-    # Transactions where the user is the sender (Outflows/Transfers sent)
-    sent_metrics = Transaction.objects.filter(from_user=user).aggregate(total_sent=Sum("amount"), count_sent=Count("id"))
-
-    # Transactions where the user is the receiver (Inflows/Transfers received)
-    received_metrics = Transaction.objects.filter(to_user=user).aggregate(
-        total_received=Sum("amount"), count_received=Count("id")
-    )
+    base = _filtered_user_transactions(user, date_from=date_from, date_to=date_to, flow_filter=flow_filter, tx_type=tx_type)
+    sent_metrics = base.filter(from_user=user).aggregate(total_sent=Sum("amount"), count_sent=Count("id"))
+    received_metrics = base.filter(to_user=user).aggregate(total_received=Sum("amount"), count_received=Count("id"))
 
     total_sent = sent_metrics["total_sent"] or 0
     total_received = received_metrics["total_received"] or 0
@@ -32,13 +49,14 @@ def get_user_financial_summary(user):
     }
 
 
-def get_monthly_volume_report(user):
+def get_monthly_volume_report(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
     """
     Returns the volume of transactions per month for the user.
     Useful for monthly activity bar charts.
     """
-    # Combine sent and received transactions
-    user_transactions = Transaction.objects.filter(Q(from_user=user) | Q(to_user=user))
+    user_transactions = _filtered_user_transactions(
+        user, date_from=date_from, date_to=date_to, flow_filter=flow_filter, tx_type=tx_type
+    )
 
     return (
         user_transactions.annotate(month=TruncMonth("created_at"))
@@ -48,11 +66,13 @@ def get_monthly_volume_report(user):
     )
 
 
-def get_transaction_type_breakdown(user):
+def get_transaction_type_breakdown(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
     """
     Break down activity by transaction type (deposit, transfer, withdrawal).
     """
-    user_transactions = Transaction.objects.filter(Q(from_user=user) | Q(to_user=user))
+    user_transactions = _filtered_user_transactions(
+        user, date_from=date_from, date_to=date_to, flow_filter=flow_filter, tx_type=tx_type
+    )
 
     return user_transactions.values("type").annotate(total=Sum("amount"), count=Count("id")).order_by("-total")
 
@@ -73,7 +93,6 @@ def get_top_transfer_partners(user):
     """
     Identifies the users with whom the user interacts most in transfers.
     """
-    # Sent transfers grouped by the receiver
     sent_to = (
         Transaction.objects.filter(from_user=user, type="transfer")
         .values("to_user__username")
