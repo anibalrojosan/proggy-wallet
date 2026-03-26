@@ -76,6 +76,7 @@ def transfer(request):
                         amount=amount,
                         type="transfer",
                         balance_after=from_account.balance,
+                        balance_after_to_user=to_account.balance,
                         description=f"Transfer to {to_user.username}",
                     )
                 messages.success(request, f"Successfully sent ${amount} to {to_user.username}!")
@@ -94,7 +95,8 @@ def transfer(request):
 class TransactionHistoryView(LoginRequiredMixin, ListView):
     model = Transaction
     template_name = "wallet/transactions.html"
-    context_object_name = "page_obj"
+    # Must not be "page_obj" — that name is reserved for Django's pagination Page object.
+    context_object_name = "movements"
     paginate_by = 10
 
     def get_queryset(self):

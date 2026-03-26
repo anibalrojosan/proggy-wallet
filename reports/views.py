@@ -1,11 +1,40 @@
+import csv
+from datetime import datetime
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.http import HttpResponseBadRequest, StreamingHttpResponse
+from django.views import View
 from django.views.generic import TemplateView
 
 from wallet.models import Transaction
 
 from . import chart_payloads, services
 from .forms import ReportsFilterForm
+
+
+class _CsvEcho:
+    """Write-only pseudo-file for csv.writer streaming."""
+
+    def write(self, value: str) -> str:
+        return value
+
+
+def _flow_label_for_user(tx: Transaction, user) -> str:
+    if tx.from_user_id == user.id and tx.type != "deposit":
+        return "expense"
+    return "income"
+
+
+def _export_filename(*, date_from, date_to) -> str:
+    today = datetime.now().strftime("%Y%m%d")
+    if date_from and date_to:
+        return f"transactions_{date_from}_{date_to}_{today}.csv"
+    if date_from:
+        return f"transactions_from_{date_from}_{today}.csv"
+    if date_to:
+        return f"transactions_until_{date_to}_{today}.csv"
+    return f"transactions_{today}.csv"
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -58,3 +87,67 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         context["filter_form"] = form
         return context
+
+
+class TransactionCsvExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        # Bind to request.GET even when empty (unlike `GET or None`, which leaves the form unbound).
+        form = ReportsFilterForm(request.GET)
+        if not form.is_valid():
+            errors = []
+            if form.non_field_errors():
+                errors.extend(str(e) for e in form.non_field_errors())
+            for field in form:
+                for err in field.errors:
+                    errors.append(f"{field.label}: {err}")
+            return HttpResponseBadRequest("\n".join(errors) or "Invalid filter parameters.", content_type="text/plain")
+
+        data = form.cleaned_data
+        date_from = data.get("date_from")
+        date_to = data.get("date_to")
+        flow_filter = data.get("filter") or None
+        tx_type = data.get("tx_type") or None
+        kw = {
+            "date_from": date_from,
+            "date_to": date_to,
+            "flow_filter": flow_filter,
+            "tx_type": tx_type,
+        }
+        user = request.user
+        qs = services.get_filtered_transactions_queryset(user, **kw)
+
+        header = [
+            "id",
+            "created_at",
+            "type",
+            "amount",
+            "flow",
+            "from_username",
+            "to_username",
+            "description",
+            "balance_after",
+        ]
+
+        def rows():
+            writer = csv.writer(_CsvEcho())
+            yield writer.writerow(header)
+            for tx in qs.iterator(chunk_size=500):
+                viewer_bal = tx.balance_after_for_viewer(user)
+                yield writer.writerow(
+                    [
+                        tx.id,
+                        tx.created_at.isoformat() if tx.created_at else "",
+                        tx.type,
+                        str(tx.amount),
+                        _flow_label_for_user(tx, user),
+                        tx.from_user.username if tx.from_user_id else "",
+                        tx.to_user.username if tx.to_user_id else "",
+                        (tx.description or "").replace("\n", " ").replace("\r", " "),
+                        str(viewer_bal) if viewer_bal is not None else "",
+                    ]
+                )
+
+        response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
+        filename = _export_filename(date_from=date_from, date_to=date_to)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response

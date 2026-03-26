@@ -28,6 +28,17 @@ def _filtered_user_transactions(user, *, date_from=None, date_to=None, flow_filt
     return qs
 
 
+def get_filtered_transactions_queryset(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
+    """
+    Ordered transactions for CSV export and list views; same filters as dashboard aggregates.
+    """
+    return (
+        _filtered_user_transactions(user, date_from=date_from, date_to=date_to, flow_filter=flow_filter, tx_type=tx_type)
+        .select_related("from_user", "to_user")
+        .order_by("-created_at")
+    )
+
+
 def get_user_financial_summary(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):
     """
     Calculates key metrics based on the user's money flow.

@@ -27,8 +27,13 @@
                     <label class="form-label" for="id_tx_type">{{ filter_form.tx_type.label }}</label>
                     {{ filter_form.tx_type }}
                 </div>
-                <div class="col-12 col-md-2">
+                <div class="col-12 col-md-2 d-flex flex-column gap-2">
+                    <label class="form-label d-block d-md-none">Actions</label>
                     <button type="submit" class="btn btn-primary w-100">Apply</button>
+                    <a
+                        href="{% url 'reports:export_transactions_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+                        class="btn btn-outline-secondary w-100"
+                    >Export CSV</a>
                 </div>
             </div>
         </form>

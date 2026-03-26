@@ -1,5 +1,7 @@
+import csv
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from io import StringIO
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -213,3 +215,106 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse("reports:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="chart-types"')
+
+
+def _csv_response_body(response) -> str:
+    return b"".join(response.streaming_content).decode()
+
+
+class TransactionCsvExportViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="csvuser", password="secret123")
+        Account.objects.filter(user=self.user).update(balance=Decimal("1000.00"))
+        self.other = User.objects.create_user(username="csvother", password="x")
+        Account.objects.filter(user=self.other).update(balance=Decimal("500.00"))
+
+    def test_csv_export_redirects_when_anonymous(self):
+        response = self.client.get(reverse("reports:export_transactions_csv"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login", response.url)
+
+    def test_csv_export_invalid_date_range_returns_400(self):
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(
+            reverse("reports:export_transactions_csv"),
+            {"date_from": "2025-06-10", "date_to": "2025-06-01"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"Start date", response.content)
+
+    def test_csv_export_empty_only_header(self):
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export_transactions_csv"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("attachment", response["Content-Disposition"])
+        lines = _csv_response_body(response).strip().splitlines()
+        self.assertEqual(len(lines), 1)
+        row = next(csv.reader(StringIO(lines[0])))
+        self.assertEqual(row[0], "id")
+
+    def test_csv_export_other_user_cannot_see_transactions(self):
+        tx = Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("99.00"),
+            type="deposit",
+            balance_after=Decimal("99.00"),
+        )
+        self.client.login(username="csvother", password="x")
+        response = self.client.get(reverse("reports:export_transactions_csv"))
+        self.assertEqual(response.status_code, 200)
+        body = _csv_response_body(response)
+        self.assertNotIn(str(tx.id), body)
+
+    def test_csv_export_respects_tx_type_filter(self):
+        Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("10.00"),
+            type="deposit",
+            balance_after=Decimal("10.00"),
+        )
+        Transaction.objects.create(
+            from_user=self.user,
+            to_user=self.other,
+            amount=Decimal("5.00"),
+            type="transfer",
+            balance_after=Decimal("5.00"),
+        )
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export_transactions_csv"), {"tx_type": "deposit"})
+        self.assertEqual(response.status_code, 200)
+        reader = csv.reader(StringIO(_csv_response_body(response)))
+        rows = list(reader)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1][2], "deposit")
+        self.assertEqual(rows[1][4], "income")
+
+    def test_csv_export_respects_date_range(self):
+        now = timezone.now()
+        old = Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("1.00"),
+            type="deposit",
+            balance_after=Decimal("1.00"),
+        )
+        Transaction.objects.filter(pk=old.pk).update(created_at=now - timedelta(days=60))
+        new = Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("2.00"),
+            type="deposit",
+            balance_after=Decimal("3.00"),
+        )
+        Transaction.objects.filter(pk=new.pk).update(created_at=now - timedelta(days=2))
+        date_from = (now - timedelta(days=7)).date().isoformat()
+        date_to = now.date().isoformat()
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(
+            reverse("reports:export_transactions_csv"),
+            {"date_from": date_from, "date_to": date_to},
+        )
+        self.assertEqual(response.status_code, 200)
+        reader = csv.reader(StringIO(_csv_response_body(response)))
+        rows = list(reader)
+        self.assertEqual(len(rows), 2)
+        self.assertIn(str(new.id), rows[1][0])
