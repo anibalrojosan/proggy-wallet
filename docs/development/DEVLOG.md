@@ -5,8 +5,12 @@ It is a living document that will be updated as the project evolves.
 
 ## 📑 Index
 
+### 🚀 Phase 4: Deployment & Infrastructure
+- [[2026-03-26] - Infrastructure: Cloud Deployment Config (Render & Supabase)](#2026-03-26---infrastructure-cloud-deployment-config-render--supabase)
+
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
-- [[2026-03-25] - Sprint: User Profiles Infrastructure & Management](#2026-03-25---sprint-user-profiles-infrastructure--management)
+- [[2026-03-26] - Phase 3.1: Reports Dashboard & Visualization](#2026-03-26---phase-31-reports-dashboard--visualization)
+- [[2026-03-25] - Phase 3.1: User Profiles Infrastructure & Management](#2026-03-25---phase-31-user-profiles-infrastructure--management)
 - [[2026-03-23] - Sprint 26: Documentation alignment and Phase 3.1 planning](#2026-03-23---sprint-26-documentation-alignment-and-phase-31-planning)
 - [[2026-03-11] - Sprint 25.5: Full-Layered Security and Integrity Implementation](#2026-03-11---sprint-255-full-layered-security-and-integrity-implementation)
 - [[2026-03-11] - Review: Data Integrity Layers in Django](#2026-03-11---review-data-integrity-layers-in-django)
@@ -57,7 +61,49 @@ It is a living document that will be updated as the project evolves.
 
 ---
 
-## [2026-03-25] - Sprint: User Profiles Infrastructure & Management
+## [2026-03-26] - Infrastructure: Cloud Deployment Config (Render & Supabase)
+
+### Context & Goals
+Prepare the application for production-grade hosting by configuring environment-specific settings and automated build processes for Render and Supabase.
+
+### Technical Implementation
+- **Settings Refactoring:** Split Django settings into `base.py`, `local.py`, and `production.py` to manage environment-specific configurations cleanly.
+- **Build Automation:** Created `build.sh` script to automate dependency installation via pip, database migrations, and static file collection during deployment.
+- **Supabase Integration:** Configured PostgreSQL connection strings and environment variables for Supabase as the production database provider.
+- **Render Configuration:** Optimized the application for Render's containerized environment, including Gunicorn setup and static file handling.
+
+### 💡 Deep Dive: Environment-Specific Configuration
+By separating `base.py`, `local.py`, and `production.py`, I ensure that the application can be deployed in different environments (development, staging, production) with the appropriate settings. This separation also helps avoid conflicts and keeps the code clean.
+
+---
+
+## [2026-03-26] - Phase 3.1: Reports Dashboard & Visualization
+
+### Context & Goals
+Close **`phase31-10`** (insights dashboard, filters, charts) by shipping a dedicated `reports` experience: users should see trustworthy aggregates for *their* activity, slice that view with GET filters aligned to wallet history, and understand trends at a glance without pulling raw rows into the browser. The work was split into a **filters/services/view** foundation and a **Bootstrap + Chart.js** presentation layer, with explicit empty states so “no data” never looks like broken UI.
+
+### Technical Implementation
+- **Routing & access:** `reports/urls.py` exposes `dashboard/` as `DashboardView.as_view()` under the `reports` namespace; only authenticated users reach the page via `LoginRequiredMixin`.
+- **View orchestration (`reports/views.py`):** `DashboardView.get_context_data` binds `ReportsFilterForm` to `request.GET`, branches on `form.is_valid()`, and passes the same filter kwargs into `services.get_user_financial_summary`, `services.get_monthly_report_rows`, and `services.get_transaction_type_breakdown`. It materializes breakdown querysets once (`list(...)`) for tables and charts. Context flags drive UX: `user_has_transactions` (any history ever), `filter_applied` (any non-empty filter field when the form is valid), `flow_filter`, `show_net_flow` (hide Net when income/expense flow is selected—avoids duplicating inflow/outflow), `show_type_chart` (skip a one-segment doughnut), plus `chart_monthly` / `chart_types` dicts for the front end.
+- **Forms (`reports/forms.py`):** `ReportsFilterForm` uses `DateField` widgets (`type="date"`), a **Flow** choice field (`income` / `expense` / empty for all), and `tx_type` choices sourced from `Transaction.TRANSACTION_TYPES` so labels stay consistent with the wallet app. `clean()` enforces `date_from <= date_to` with a non-field error.
+- **Service layer (`reports/services.py`):** `_filtered_user_transactions` is the single gate for user scoping and filters: base `Q(from_user=user) | Q(to_user=user)`, optional date bounds on `created_at__date`, optional `type`, and flow semantics matching history (**income** → `to_user=user`, **expense** → `from_user=user`). `get_user_financial_summary` aggregates sent vs received on that base queryset. `get_monthly_volume_report` uses `TruncMonth` + `Sum`/`Count` for chart-friendly monthly buckets. `get_monthly_report_rows` normalizes rows as `{month, inflow, outflow, net, count}`: with no flow filter it merges inflow and outflow per month; with a flow filter it maps volume to the active side and sets **`net` as inflow − outflow** for correct table display.
+- **Chart serialization (`reports/chart_payloads.py`):** Pure helpers turn Python/ORM-friendly rows into **JSON-safe** structures (`Decimal` → `float`, month → `YYYY-MM` strings). `monthly_bars_chart_payload` emits one or two bar datasets depending on `flow_filter`; empty input yields empty `labels`/`datasets` so the client skips `new Chart`. `transaction_type_chart_payload` maps type codes to human labels for the doughnut chart.
+- **Template (`reports/templates/reports/dashboard.html`):** Filters live in a Bootstrap card; validation errors render in the card footer. Alerts distinguish **no transactions ever** vs **filters returned zero rows** (`filter_applied` + `summary.transaction_count == 0`). The **KPI row, flow hints, monthly/type sections, tables, and `json_script` tags** are wrapped in `{% if summary.transaction_count > 0 %}` so filtered-empty views show only the funnel message (no zeroed cards or chart placeholders). Column widths adjust when the Net card is hidden; monthly table headers reflect flow (inflow/outflow/net vs single amount). Tables sit in `<details>` for progressive disclosure. `{% block extra_js %}` loads Chart.js from a CDN and `{% static 'js/reports_dashboard.js' %}`.
+- **Client script (`static/js/reports_dashboard.js`):** On `DOMContentLoaded`, reads JSON from elements produced by Django’s `json_script` filter, parses safely, and instantiates Chart.js **only** when payloads and canvases exist and labels/datasets meet thresholds (e.g. doughnut only if more than one type segment).
+- **Tests (`reports/tests.py`):** Coverage for chart payloads (empty/single/multi-series), monthly row merging and `net`, service filtering behavior, and `Client` integration on `reports:dashboard` (empty user vs user with data vs filtered no results), aligning expectations with conditional markup.
+
+### 💡 Deep Dive: End-to-end path from PostgreSQL to Chart.js
+Aggregations stay in the database: filtered querysets use `annotate`/`aggregate` so the app ships summaries, not full transaction lists. The view never hand-builds JSON strings for charts; it passes plain dicts into the template and uses the **`json_script`** filter so data is HTML-escaped and consumed as `textContent` in JavaScript—this avoids `mark_safe` and reduces XSS risk compared to embedding raw JSON in attributes. The static initializer stays thin: it only bridges DOM payloads to Chart.js configuration, keeping business rules and labeling on the Python side.
+
+### Next Steps
+- **`phase31-13`:** CSV (or similar) export of the **currently filtered** report set, reusing the same service/query patterns.
+- Optional hardening: document or test edge cases for legacy rows where `from_user`/`to_user` might not match deposit semantics (see project notes on net flow vs historical data).
+- Keep `SPRINTS.md` / issue tracker in sync with shipped checklist items for this phase.
+
+---
+
+
+## [2026-03-25] - Phase 3.1: User Profiles Infrastructure & Management
 
 ### Context & Goals
 The primary goal was to establish a robust user profile system, allowing users to manage their personal information and identity within the application. This involved creating the underlying data structures, handling media storage for avatars, and implementing the necessary views and forms for profile management.
