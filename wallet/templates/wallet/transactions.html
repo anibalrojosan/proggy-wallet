@@ -48,7 +48,9 @@
                             <td class="{% if tx.from_user == user and tx.type != 'deposit' %}text-danger{% else %}text-success{% endif %}">
                                 {% if tx.from_user == user and tx.type != 'deposit' %}-{% else %}+{% endif %}${{ tx.amount }}
                             </td>
-                            <td class="fw-bold">${{ tx.balance_after }}</td> 
+                            <td class="fw-bold">
+                                {% if tx.balance_after is not None %}${{ tx.balance_after }}{% else %}—{% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <!-- If there are no transactions, show a message -->

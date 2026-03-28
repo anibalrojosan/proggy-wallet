@@ -35,6 +35,18 @@
                         
                         <button type="submit" class="btn btn-primary w-100 btn-lg mt-3">Login</button>
                     </form>
+
+                    <hr class="my-4">
+
+                    <form method="post" action="{% url 'guest_login' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary w-100">
+                            Log in as a guest
+                        </button>
+                    </form>
+                    <p class="text-muted small text-center mt-2 mb-0">
+                        Demo accounts are created for your session and removed from the database when you log out.
+                    </p>
                 </div>
             </div>
         </div>

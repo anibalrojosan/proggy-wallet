@@ -1,13 +1,56 @@
+import logging
+
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
+from .demo_sandbox import (
+    demo_peer_id_set,
+    ensure_demo_users_exist,
+    is_demo_guest_user,
+    is_demo_sandbox_username,
+)
 from .forms import DepositForm, TransferForm
 from .models import Transaction
+
+logger = logging.getLogger(__name__)
+
+
+@require_POST
+def guest_login(request):
+    """Log in as the configured demo guest (credentials from settings / env)."""
+    username = settings.DEMO_GUEST_USERNAME
+    password = settings.DEMO_GUEST_PASSWORD
+
+    try:
+        ensure_demo_users_exist()
+    except Exception:
+        logger.exception("ensure_demo_users_exist failed during guest_login")
+        messages.error(request, "Demo login is not available.")
+        return redirect("login")
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        hint = (
+            " Check DEMO_GUEST_PASSWORD matches your environment."
+            if settings.DEBUG
+            else ""
+        )
+        messages.error(request, "Demo login is not available." + hint)
+        return redirect("login")
+    login(request, user)
+    messages.info(
+        request,
+        "You are using the demo guest account. Demo users are removed from the database when you log out.",
+    )
+    return redirect("menu")
 
 
 @login_required
@@ -56,6 +99,14 @@ def transfer(request):
         if form.is_valid():
             to_user = form.cleaned_data["to_user"]
             amount = form.cleaned_data["amount"]
+
+            if is_demo_guest_user(request.user) and to_user.id not in demo_peer_id_set():
+                messages.error(request, "Demo accounts can only transfer to demo peers.")
+                return render(request, "wallet/sendmoney.html", {"form": form})
+
+            if not is_demo_guest_user(request.user) and is_demo_sandbox_username(to_user.username):
+                messages.error(request, "You cannot transfer to demo accounts.")
+                return render(request, "wallet/sendmoney.html", {"form": form})
 
             try:
                 with transaction.atomic():

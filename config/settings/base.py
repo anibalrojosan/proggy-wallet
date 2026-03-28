@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "wallet",
+    "wallet.apps.WalletConfig",
     "profiles",
     "reports",
 ]
@@ -144,3 +144,16 @@ PASSWORD_HASHERS = [
 # Reference: ADR-04 for production strategy (Phase 4)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Demo / guest sandbox (isolated synthetic users; see wallet.demo_sandbox)
+DEMO_GUEST_USERNAME = env("DEMO_GUEST_USERNAME", default="guest")
+DEMO_PEER_USERNAMES = [
+    s.strip()
+    for s in env(
+        "DEMO_PEER_USERNAMES",
+        default="demo_peer_1,demo_peer_2,demo_peer_3",
+    ).split(",")
+    if s.strip()
+]
+# Set a strong value in production (Render env); default is for local dev only.
+DEMO_GUEST_PASSWORD = env("DEMO_GUEST_PASSWORD", default="guest-demo-dev")

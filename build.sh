@@ -11,6 +11,3 @@ python manage.py collectstatic --no-input
 
 # Apply migrations
 python manage.py migrate
-
-# Show migrations status (to verify DB health)
-python manage.py showmigrations

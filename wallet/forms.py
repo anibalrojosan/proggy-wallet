@@ -1,7 +1,10 @@
 from decimal import Decimal
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
+
+from wallet.demo_sandbox import get_demo_peer_usernames, is_demo_guest_user
 
 
 class DepositForm(forms.Form):
@@ -29,8 +32,16 @@ class TransferForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         if self.user:
-            # Filter out the current user from the queryset
-            self.fields["to_user"].queryset = User.objects.exclude(id=self.user.id)
+            if is_demo_guest_user(self.user):
+                names = get_demo_peer_usernames()
+                self.fields["to_user"].queryset = User.objects.filter(username__in=names).order_by(
+                    "username"
+                )
+            else:
+                demo_names = [settings.DEMO_GUEST_USERNAME, *get_demo_peer_usernames()]
+                self.fields["to_user"].queryset = (
+                    User.objects.exclude(id=self.user.id).exclude(username__in=demo_names).order_by("username")
+                )
 
     def clean_amount(self):
         "Custom validation for the transfer amount"
