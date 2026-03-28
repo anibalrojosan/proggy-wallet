@@ -9,6 +9,11 @@
 >
 > Current focus: **Phase 4: Cloud Deployment and CI/CD**.
 
+**Live app (Render):** [https://proggy-wallet.onrender.com/](https://proggy-wallet.onrender.com/)
+
+> **Note:** The free Render tier may take ~30–50s to respond after idle (cold start).
+---
+
 **Proggy Wallet** is a comprehensive engineering roadmap designed to architect a production-ready **Full-Stack Fintech solution**. This project documents the complete lifecycle of modern software development, bridging the gap between a dynamic **Frontend prototype** and a scalable **Django ecosystem**.
 
 It serves as a definitive technical reference for industry best practices, implementing a **Monolithic Architecture** through Django’s **MTV (Model-Template-View)** pattern. By consolidating logic and presentation, the project integrates advanced **Python logic**, **SQL persistence**, and automated **DevOps workflows** (Docker & CI/CD) to demonstrate the rigorous evolution from initial code to global cloud deployment.
@@ -120,28 +125,42 @@ The design process and the implementation of this project are documented in the 
 - **[PRD](docs/PRD.md)**: Requirements document.
 - **[ROADMAP](docs/ROADMAP.md)**: Path from prototype to production.
 
-## Project Structure (Phase 3)
+## Project Structure (Overview)
 ```text
 proggy-wallet/
-├── config/               # ⚙️ Global Django settings and URL routing
-├── docs/                 # 📝 Comprehensive documentation and ADRs
-├── wallet/               # 💰 Main application (Models, Views, Forms, Tests)
-│   ├── fixtures/         # 📦 Initial data (JSON)
-│   ├── migrations/       # 🗄️ Database version control
-│   ├── templates/        # 🖥️ UI Views (Django Template Language)
-│   │   └── wallet/       # 📱 Scoped templates
-│   ├── admin.py          # 🛡️ Admin interface configuration
-│   ├── forms.py          # 📝 Form validation logic
-│   ├── models.py         # 🧠 Data models and constraints
-│   ├── tests.py          # 🧪 Integration and unit tests
-│   └── views.py          # 🌐 Business logic and orchestration
-├── .env.example          # 🔐 Environment variables
-├── .gitignore            # 📂 Git ignore rules
-├── .python-version       # 🐍 Python version
-├── docker-compose.yml    # 🐳 PostgreSQL container configuration
-├── manage.py             # 🚀 Django management entry point
-├── pyproject.toml        # ⚙️ Project configuration & dependencies
-└── uv.lock               # 🔒 Lockfile for reproducible dependencies
+├── config/                    # ⚙️ Project URLs, WSGI/ASGI, split settings
+│   ├── settings/
+│   │   ├── base.py            # Shared settings (apps, middleware, templates)
+│   │   ├── local.py           # Local dev (e.g. SQLite / Docker Postgres via env)
+│   │   └── production.py      # Render: DATABASE_URL, WhiteNoise, security headers
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── asgi.py
+├── docs/                      # 📝 Comprehensive documentation and ADRs
+├── profiles/                  # 👤 User profile extension (avatar, bio)
+├── reports/                   # 📊 Dashboard, filters, charts (reads wallet.Transaction)
+├── wallet/                    # 💰 Core ledger: Account, Transaction, wallet UI
+│   ├── fixtures/
+│   ├── migrations/
+│   ├── templates/
+│   │   ├── wallet/            # Menu, deposit, transfer, transaction history
+│   │   ├── registration/      # login.html (django.contrib.auth)
+│   │   └── base.html
+│   ├── models.py
+│   ├── views.py
+│   ├── forms.py
+│   ├── tests.py
+│   └── admin.py
+├── .env.example               # 🔐 Environment variables
+├── .gitignore                 # 📂 Git ignore rules
+├── .python-version            # 🐍 Python version
+├── build.sh                   # 🔧 Render: install, collectstatic, migrate
+├── docker-compose.yml         # 🐳 PostgreSQL container configuration
+├── manage.py                  # 🚀 Django management entry point
+├── pyproject.toml             # ⚙️ Project configuration & dependencies
+├── requirements.txt           # 📦 Pinned deps for PaaS builds (see also uv.lock)
+└── uv.lock                    # 🔒 Lockfile for reproducible dependencies
+
 ```
 
 ## Architecture & Security (Defense in Depth)
@@ -162,5 +181,6 @@ Proggy Wallet implements a **6-layer security strategy** to ensure financial dat
 * **Security:** Django Auth, `CheckConstraints`, `Validators`.
 * **Tooling:** `uv` (Package Manager), `Ruff` (Linter/Formatter), `Pytest`.
 * **Infrastructure:** `Docker`.
+* **Deployment:** `Render`, `Supabase`.
 
 > Done with ❤️ by [Aníbal Rojo](https://github.com/anibalrojosan).
