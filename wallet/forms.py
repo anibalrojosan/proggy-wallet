@@ -34,11 +34,13 @@ class TransferForm(forms.Form):
         if self.user:
             if is_demo_guest_user(self.user):
                 names = get_demo_peer_usernames()
+                # Only show the demo peer users to the demo guest user
                 self.fields["to_user"].queryset = User.objects.filter(username__in=names).order_by(
                     "username"
                 )
             else:
                 demo_names = [settings.DEMO_GUEST_USERNAME, *get_demo_peer_usernames()]
+                # Exclude the demo users from the recipient selection
                 self.fields["to_user"].queryset = (
                     User.objects.exclude(id=self.user.id).exclude(username__in=demo_names).order_by("username")
                 )
