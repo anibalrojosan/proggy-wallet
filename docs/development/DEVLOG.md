@@ -6,6 +6,7 @@ It is a living document that will be updated as the project evolves.
 ## 📑 Index
 
 ### 🚀 Phase 4: Deployment & Infrastructure
+- [[2026-03-28] - Phase 4: Demo Guest Sandbox and Production DB Verification](#2026-03-28---phase-4-demo-guest-sandbox-and-production-db-verification)
 - [[2026-03-26] - Infrastructure: Cloud Deployment Config (Render & Supabase)](#2026-03-26---infrastructure-cloud-deployment-config-render--supabase)
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
@@ -58,6 +59,33 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-28] - Phase 4: Demo Guest Sandbox and Production DB Verification
+
+### Context & Goals
+Now that the app is deployed, a landing page was missing. I decided to make a **'log in as a guest'** button so visitors can explore the wallet with **pre-seeded data** without touching real user balances, while keeping production PostgreSQL (Supabase) **predictable** and **verifiable** from both the deployed app and external tooling (DBeaver). Also confirm end-to-end that **Render** uses the same database as **Supabase** when `DATABASE_URL` is configured correctly.
+
+### Technical Implementation
+- **Sandbox module (`wallet/demo_sandbox.py`):** Centralized demo logic: `ensure_demo_users_exist()` creates the configured `guest` and three `demo_peer_*` users; `reset_demo_sandbox()` deletes ledger rows for those users, resets `Account` balances, and inserts **10** canonical seed `Transaction` rows inside `transaction.atomic()`; `tear_down_demo_sandbox()` deletes sandbox transactions then removes demo `User` rows (CASCADE cleans related `Account` / profile rows). Helpers: `all_demo_usernames()`, `is_demo_guest_user`, `demo_peer_id_set`, strict `get_demo_peer_usernames()` (exactly three peers).
+- **Auth signals (`wallet/signals.py`):** On `user_logged_in`, if the user is the demo guest, call `reset_demo_sandbox()` so every guest session starts from the same snapshot. On `user_logged_out`, if the user is the guest, call `tear_down_demo_sandbox()` so demo users **do not persist** in the database between sessions.
+- **App wiring (`wallet/apps.py`):** `WalletConfig.ready()` imports `wallet.signals` so receivers register at startup.
+- **Guest entrypoint (`wallet/views.py`):** `guest_login` (`POST` only) calls `ensure_demo_users_exist()`, then `authenticate` / `login`, redirects to `menu`. `transfer` rejects transfers from real users to demo accounts (`is_demo_sandbox_username`) and keeps guest sends limited to peers (`demo_peer_id_set`).
+- **Forms (`wallet/forms.py`):** `TransferForm` restricts guest recipients to the three peers; non-guest users get a queryset that **excludes** all demo usernames so they never see demo accounts in the UI.
+- **URLs & UI:** `config/urls.py` registers `accounts/guest-login/` before `django.contrib.auth.urls`. `wallet/templates/registration/login.html` adds a second POST form for guest login and copy explaining teardown on logout.
+- **Deploy script (`build.sh`):** Removed automatic `ensure_demo_users` so production builds **do not** create demo rows; demo users appear only when someone uses guest login (or when running the management command locally).
+- **Management command (`wallet/management/commands/ensure_demo_users.py`):** Still available for **local / CI** to run `ensure_demo_users_exist()` + `reset_demo_sandbox()`.
+- **Tests & settings:** `wallet/test_demo_guest.py` with `config.settings.test` (SQLite); coverage for seed counts, transfer isolation, logout teardown, and non-demo transfer queryset. `.env.example` documents `DEMO_*` variables.
+- **Template polish (`wallet/templates/wallet/transactions.html`):** Avoid displaying `$None` when `balance_after` is null on incoming seed transfers.
+- **Operational verification:** Confirmed Render’s `DATABASE_URL` points at Supabase Postgres; **DBeaver** connected with the same connection parameters (host, port, database, user, password, SSL). Inspecting `wallet_transaction` (or equivalent) showed seed descriptions (e.g. “Opening deposit”, “Transfer to peer 1”), proving the deployed app writes to that database; after guest **logout**, teardown removes demo users and their sandbox rows when the signal runs successfully.
+
+### 💡 Deep Dive: Same database, scoped writes
+The app does **not** use a separate database for the demo. Integrity is enforced by **which users participate** (guest + three peers), **atomic reset** of their ledger, **transfer querysets** and view checks, and **teardown on logout** so demo rows are not left alongside real customers indefinitely. Observability (DBeaver) uses the same credentials as `DATABASE_URL`, so what you see in SQL is what Gunicorn on Render is using—modulo connection pooling host/port if you use Supabase’s pooler.
+
+### Next Steps
+- Optional: `DEMO_GUEST_ENABLED` (or similar) flag in production to hide guest login when the public demo should be off.
+- Document or automate cleanup for abandoned demo sessions (e.g. tab closed without logout) if stray rows become noisy.
 
 ---
 

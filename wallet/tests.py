@@ -12,7 +12,9 @@ class WalletIntegrityTest(TestCase):
     def setUp(self):
         """Set up a test user and account."""
         self.user = User.objects.create_user(username="testuser", password="password123")
-        self.account = Account.objects.create(user=self.user, balance=Decimal("100.00"))
+        self.account = self.user.account
+        self.account.balance = Decimal("100.00")
+        self.account.save()
 
     def test_layer_5_model_validation_negative_balance(self):
         """Layer 5: Test that MinValueValidator prevents negative balance in Python."""

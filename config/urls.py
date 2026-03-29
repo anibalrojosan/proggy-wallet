@@ -25,6 +25,7 @@ from wallet import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/guest-login/", views.guest_login, name="guest_login"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("menu/", views.menu, name="menu"),
     path("deposit/", views.deposit, name="deposit"),
