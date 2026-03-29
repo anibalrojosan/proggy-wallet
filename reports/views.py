@@ -1,5 +1,10 @@
+import csv
+import io
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.views import View
 from django.views.generic import TemplateView
 
 from wallet.models import Transaction
@@ -58,3 +63,56 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         context["filter_form"] = form
         return context
+
+
+class TransactionCsvExportView(LoginRequiredMixin, View):
+    """User-scoped CSV download; query params match ReportsFilterForm / dashboard."""
+
+    def get(self, request, *args, **kwargs):
+        form = ReportsFilterForm(request.GET or None)
+        if not form.is_valid():
+            return HttpResponseBadRequest(form.errors.as_text() or "Invalid filters.")
+
+        user = request.user
+        data = form.cleaned_data
+        kw = {
+            "date_from": data.get("date_from"),
+            "date_to": data.get("date_to"),
+            "flow_filter": data.get("filter") or None,
+            "tx_type": data.get("tx_type") or None,
+        }
+        qs = services.get_filtered_transactions_for_user(user, **kw)
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(
+            [
+                "id",
+                "created_at",
+                "type",
+                "amount",
+                "flow",
+                "from_username",
+                "to_username",
+                "description",
+                "balance_after",
+            ]
+        )
+        for tx in qs.iterator(chunk_size=500):
+            writer.writerow(
+                [
+                    tx.id,
+                    tx.created_at.isoformat(),
+                    tx.type,
+                    str(tx.amount),
+                    services.transaction_flow_for_user(tx, user),
+                    tx.from_user.username if tx.from_user_id else "",
+                    tx.to_user.username if tx.to_user_id else "",
+                    tx.description or "",
+                    str(tx.balance_after) if tx.balance_after is not None else "",
+                ]
+            )
+
+        response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="transactions_export.csv"'
+        return response

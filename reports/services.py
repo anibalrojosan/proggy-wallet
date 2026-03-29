@@ -1,6 +1,7 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, Q, Sum
+from django.contrib.auth.models import AbstractBaseUser
+from django.db.models import Avg, Count, Q, QuerySet, Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
@@ -26,6 +27,48 @@ def _filtered_user_transactions(user, *, date_from=None, date_to=None, flow_filt
     elif flow_filter == "expense":
         qs = qs.filter(from_user=user)
     return qs
+
+
+def get_filtered_transactions_for_user(
+    user,
+    *,
+    date_from=None,
+    date_to=None,
+    flow_filter: str | None = None,
+    tx_type: str | None = None,
+) -> QuerySet[Transaction]:
+    """
+    Transactions involving the user with the same filters as the reports dashboard.
+    Ordered for stable CSV export (newest first).
+    """
+    return (
+        _filtered_user_transactions(
+            user,
+            date_from=date_from,
+            date_to=date_to,
+            flow_filter=flow_filter,
+            tx_type=tx_type,
+        )
+        .select_related("from_user", "to_user")
+        .order_by("-created_at", "-id")
+    )
+
+
+def transaction_flow_for_user(tx: Transaction, user: AbstractBaseUser) -> str:
+    """
+    CSV flow label from the viewer's perspective: expense (out) vs income (in).
+    If the user is both sender and receiver, expense is reported (matches dashboard double-count semantics).
+    """
+    uid = user.pk
+    is_from = tx.from_user_id == uid
+    is_to = tx.to_user_id == uid
+    if is_from and is_to:
+        return "expense"
+    if is_from:
+        return "expense"
+    if is_to:
+        return "income"
+    return ""
 
 
 def get_user_financial_summary(user, *, date_from=None, date_to=None, flow_filter=None, tx_type=None):

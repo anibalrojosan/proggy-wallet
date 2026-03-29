@@ -30,6 +30,11 @@
                 <div class="col-12 col-md-2">
                     <button type="submit" class="btn btn-primary w-100">Apply</button>
                 </div>
+                <div class="col-12 col-md-2">
+                    <button type="submit" formaction="{% url 'reports:export' %}" class="btn btn-outline-secondary w-100">
+                        Export CSV
+                    </button>
+                </div>
             </div>
         </form>
         {% if filter_form.errors %}
