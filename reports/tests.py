@@ -1,3 +1,5 @@
+import csv
+import io
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -213,3 +215,208 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse("reports:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="chart-types"')
+
+
+EXPECTED_CSV_HEADER = [
+    "id",
+    "created_at",
+    "type",
+    "amount",
+    "flow",
+    "from_username",
+    "to_username",
+    "description",
+    "balance_after",
+]
+
+
+def _parse_csv_response(response):
+    text = response.content.decode("utf-8")
+    rows = list(csv.reader(io.StringIO(text)))
+    return rows[0], rows[1:]
+
+
+class TransactionCsvExportViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="csvuser", password="secret123")
+        Account.objects.filter(user=self.user).update(balance=Decimal("1000.00"))
+
+    def test_export_redirects_when_anonymous(self):
+        response = self.client.get(reverse("reports:export"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login", response.url)
+
+    def test_export_invalid_date_range_returns_400(self):
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(
+            reverse("reports:export"),
+            {"date_from": "2025-06-10", "date_to": "2025-06-01"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"date", response.content.lower())
+
+    def test_export_empty_transactions_header_only(self):
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response["Content-Type"])
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn("transactions_export.csv", response["Content-Disposition"])
+        header, data_rows = _parse_csv_response(response)
+        self.assertEqual(header, EXPECTED_CSV_HEADER)
+        self.assertEqual(len(data_rows), 0)
+
+    def test_export_user_isolation_excludes_other_users_transactions(self):
+        user_b = User.objects.create_user(username="csvuser_b", password="x")
+        user_c = User.objects.create_user(username="csvuser_c", password="x")
+        Account.objects.filter(user=user_b).update(balance=Decimal("500.00"))
+        Account.objects.filter(user=user_c).update(balance=Decimal("500.00"))
+
+        tx_a = Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("25.00"),
+            type="deposit",
+            balance_after=Decimal("25.00"),
+        )
+        tx_bc = Transaction.objects.create(
+            from_user=user_b,
+            to_user=user_c,
+            amount=Decimal("99.00"),
+            type="transfer",
+            balance_after=Decimal("1.00"),
+        )
+
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export"))
+        self.assertEqual(response.status_code, 200)
+        _, data_rows = _parse_csv_response(response)
+        ids_exported = {int(row[0]) for row in data_rows}
+        self.assertIn(tx_a.id, ids_exported)
+        self.assertNotIn(tx_bc.id, ids_exported)
+
+    def test_export_expense_filter_matches_service_queryset(self):
+        other = User.objects.create_user(username="csvpeer", password="x")
+        Account.objects.filter(user=other).update(balance=Decimal("100.00"))
+        Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("100.00"),
+            type="deposit",
+            balance_after=Decimal("100.00"),
+        )
+        Transaction.objects.create(
+            from_user=self.user,
+            to_user=other,
+            amount=Decimal("40.00"),
+            type="transfer",
+            balance_after=Decimal("60.00"),
+        )
+
+        kw = {"flow_filter": "expense"}
+        expected_count = services.get_filtered_transactions_for_user(self.user, **kw).count()
+        self.assertEqual(expected_count, 1)
+
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export"), {"filter": "expense"})
+        self.assertEqual(response.status_code, 200)
+        _, data_rows = _parse_csv_response(response)
+        self.assertEqual(len(data_rows), expected_count)
+        self.assertEqual(data_rows[0][2], "transfer")
+        self.assertEqual(data_rows[0][4], "expense")
+
+    def test_export_tx_type_deposit_only(self):
+        other = User.objects.create_user(username="csvpeer2", password="x")
+        Account.objects.filter(user=other).update(balance=Decimal("100.00"))
+        Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("10.00"),
+            type="deposit",
+            balance_after=Decimal("10.00"),
+        )
+        Transaction.objects.create(
+            from_user=self.user,
+            to_user=other,
+            amount=Decimal("5.00"),
+            type="transfer",
+            balance_after=Decimal("5.00"),
+        )
+
+        kw = {"tx_type": "deposit"}
+        expected_count = services.get_filtered_transactions_for_user(self.user, **kw).count()
+
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export"), {"tx_type": "deposit"})
+        self.assertEqual(response.status_code, 200)
+        _, data_rows = _parse_csv_response(response)
+        self.assertEqual(len(data_rows), expected_count)
+        self.assertEqual(len(data_rows), 1)
+        self.assertEqual(data_rows[0][2], "deposit")
+
+    def test_export_row_count_matches_queryset_with_multiple_transactions(self):
+        other = User.objects.create_user(username="csvpeer3", password="x")
+        Account.objects.filter(user=other).update(balance=Decimal("200.00"))
+        Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("1.00"),
+            type="deposit",
+            balance_after=Decimal("1.00"),
+        )
+        Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("2.00"),
+            type="deposit",
+            balance_after=Decimal("3.00"),
+        )
+        Transaction.objects.create(
+            from_user=self.user,
+            to_user=other,
+            amount=Decimal("0.50"),
+            type="transfer",
+            balance_after=Decimal("2.50"),
+        )
+
+        expected_count = services.get_filtered_transactions_for_user(self.user).count()
+        self.assertEqual(expected_count, 3)
+
+        self.client.login(username="csvuser", password="secret123")
+        response = self.client.get(reverse("reports:export"))
+        self.assertEqual(response.status_code, 200)
+        _, data_rows = _parse_csv_response(response)
+        self.assertEqual(len(data_rows), expected_count)
+
+
+class TransactionFlowForUserTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="flowuser", password="x")
+        Account.objects.filter(user=self.user).update(balance=Decimal("1000.00"))
+        self.other = User.objects.create_user(username="flowother", password="x")
+        Account.objects.filter(user=self.other).update(balance=Decimal("100.00"))
+
+    def test_deposit_to_user_is_income(self):
+        tx = Transaction.objects.create(
+            to_user=self.user,
+            amount=Decimal("50.00"),
+            type="deposit",
+            balance_after=Decimal("50.00"),
+        )
+        self.assertEqual(services.transaction_flow_for_user(tx, self.user), "income")
+
+    def test_transfer_sent_is_expense(self):
+        tx = Transaction.objects.create(
+            from_user=self.user,
+            to_user=self.other,
+            amount=Decimal("10.00"),
+            type="transfer",
+            balance_after=Decimal("90.00"),
+        )
+        self.assertEqual(services.transaction_flow_for_user(tx, self.user), "expense")
+
+    def test_self_transfer_reports_expense(self):
+        tx = Transaction.objects.create(
+            from_user=self.user,
+            to_user=self.user,
+            amount=Decimal("1.00"),
+            type="transfer",
+            balance_after=Decimal("99.00"),
+        )
+        self.assertEqual(services.transaction_flow_for_user(tx, self.user), "expense")

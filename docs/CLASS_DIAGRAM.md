@@ -1,6 +1,6 @@
 # Class Diagram & Design Decisions
 
-This document describes the **domain-oriented** structure of Proggy Wallet aligned with the **Django** implementation (Phase 3) and the **planned** Phase 3.1 models. It complements [DATABASE.md](DATABASE.md) and `wallet/models.py`.
+This document describes the **domain-oriented** structure of Proggy Wallet aligned with the **Django** implementation (Phase 3 wallet core and Phase 3.1 `profiles`). It complements [DATABASE.md](DATABASE.md) and the apps’ `models.py` files.
 
 ## Class diagram (conceptual / ORM-aligned)
 
@@ -14,10 +14,12 @@ classDiagram
     }
 
     class UserProfile {
-        <<profiles Phase 3.1>>
+        <<profiles.UserProfile>>
         +OneToOne user
-        +avatar optional
         +bio optional
+        +avatar optional
+        +created_at
+        +updated_at
     }
 
     class Account {
@@ -44,7 +46,7 @@ classDiagram
     User "1" -- "*" Transaction : received_transactions
 ```
 
-**Phase 3.1 (reports):** Aggregation and export logic may live in plain Python functions or a small **`reports.services`** module; it is not a second ledger. Diagrams can add `<<service>>` helpers later if useful.
+**Reports (no ORM aggregate class):** Dashboard and CSV export use **`reports.services`** (filtered querysets, aggregates) and **`reports.views`**; they do **not** add models or a second ledger.
 
 ## Design decisions
 
@@ -58,9 +60,9 @@ classDiagram
 * **Decision:** `wallet.Transaction` records movements with optional `from_user` / `to_user` and positive `amount`.
 * **Rationale:** Audit trail and history UI; constraints at DB and model level prevent invalid amounts.
 
-### 3. UserProfile extension (Phase 3.1)
+### 3. UserProfile extension (Phase 3.1, shipped)
 
-* **Decision:** Separate **`UserProfile`** model with **`OneToOneField`** to `User` for display fields and avatar.
+* **Decision:** Separate **`UserProfile`** model with **`OneToOneField`** to `User` for `bio`, optional `avatar`, and timestamps.
 * **Rationale:** Avoid overriding Django’s `User` table; keeps auth upgrades straightforward. Avatar storage follows [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
 
 ### 4. Validation in Django, not a parallel API layer
@@ -75,4 +77,4 @@ classDiagram
 
 ---
 
-*Last updated: 23 March, 2026 — Django / Phase 3 + planned `UserProfile`.*
+*Last updated: 30 March, 2026 — Django Phase 3 + 3.1 (`UserProfile`, read-only reports layer).*

@@ -2,16 +2,16 @@
 
 This document serves as one of the three documents that makes up the single source of truth of this project, along with [ARCHITECTURE.md](ARCHITECTURE.md) and [PRD.md](PRD.md). Here its defined the *database* schema of the project, *where* and *how* the data is stored and how the entities interact with each other to accomplish the business logic defined in the PRD.
 
-The **implemented** wallet schema matches **Phase 3** (Django ORM): Django’s built-in user table plus `wallet_account` and `wallet_transaction` (see `wallet/models.py` and migrations).
+The **implemented** schema includes **Phase 3** (Django ORM): Django’s built-in user table plus `wallet_account` and `wallet_transaction` (see `wallet/models.py` and migrations), and **Phase 3.1** table **`profiles_userprofile`** for model **`UserProfile`** (see `profiles/models.py` and migrations).
 
-**Phase 3.1** adds **`profiles_userprofile`** (planned name: model **`UserProfile`**) as described below.
+The **`reports`** app adds **no tables** in v1 (read-only queries over `wallet`).
 
 ## Entity Relationship Diagram (ERD)
 
 ```mermaid
 erDiagram
     USER ||--|| ACCOUNT : "OneToOne"
-    USER ||--o| USERPROFILE : "OneToOne planned"
+    USER ||--o| USERPROFILE : "OneToOne"
     "TRANSACTION" }o--|| USER : "from_user"
     "TRANSACTION" }o--|| USER : "to_user"
 
@@ -25,8 +25,10 @@ erDiagram
     USERPROFILE {
         int id PK
         int user_id FK, UK
-        string avatar
+        string avatar "nullable"
         text bio
+        datetime created_at
+        datetime updated_at
     }
 
     ACCOUNT {
@@ -48,7 +50,7 @@ erDiagram
     }
 ```
 
-> **Note:** `USERPROFILE` is **planned** for Phase 3.1; exact optional columns (e.g. `display_name`) follow the `profiles` app implementation. The **`reports`** app is expected to add **no new tables** in the first iteration (read-only queries over `wallet`).
+> **Note:** `USERPROFILE` is **implemented** in `profiles`; the canonical column list is `profiles/models.py` and migrations. **`reports`** adds **no new tables** (read-only over `wallet`).
 
 ## Data Model Explanation
 
@@ -81,11 +83,12 @@ Append-only style ledger for deposits and transfers (and reserved type `withdraw
 - **created_at**: Automatic timestamp.
 - **balance_after**: Optional; after deposits/transfers from the web UI it stores the **sender’s** account balance after the operation where applicable.
 
-#### 4. UserProfile (`profiles.UserProfile`) — Phase 3.1 (planned)
+#### 4. UserProfile (`profiles.UserProfile`) — Phase 3.1 (implemented)
 
-- **user**: `OneToOneField` to `User` (primary association for extended profile data).
-- **avatar**: Optional image field; file storage per [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
-- Additional display or preference fields as required by the PRD and forms (migrations will be the canonical list).
+- **user**: `OneToOneField` to `User` (`related_name='profile'`). Cascade delete removes the profile with the user.
+- **bio**: `TextField`, optional (blank allowed), max length 500 at model level.
+- **avatar**: Optional `ImageField` (`upload_to='avatars/'`); file storage per [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
+- **created_at** / **updated_at**: Automatic timestamps (`auto_now_add` / `auto_now`).
 
 ### Key Design Principles
 
@@ -95,4 +98,4 @@ Append-only style ledger for deposits and transfers (and reserved type `withdraw
 
 ---
 
-*Last updated: 23 March, 2026 — Phase 3 implemented; `UserProfile` planned Phase 3.1.*
+*Last updated: 30 March, 2026 — Phase 3.1 `UserProfile` implemented; `reports` remains table-free.*

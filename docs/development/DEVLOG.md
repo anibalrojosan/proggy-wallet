@@ -10,6 +10,7 @@ It is a living document that will be updated as the project evolves.
 - [[2026-03-26] - Infrastructure: Cloud Deployment Config (Render & Supabase)](#2026-03-26---infrastructure-cloud-deployment-config-render--supabase)
 
 ### 🏗️ Phase 3: Enterprise Ecosystem (Django)
+- [[2026-03-30] - Phase 3.1: Reports CSV Export, Tests & Documentation](#2026-03-30---phase-31-reports-csv-export-tests--documentation)
 - [[2026-03-26] - Phase 3.1: Reports Dashboard & Visualization](#2026-03-26---phase-31-reports-dashboard--visualization)
 - [[2026-03-25] - Phase 3.1: User Profiles Infrastructure & Management](#2026-03-25---phase-31-user-profiles-infrastructure--management)
 - [[2026-03-23] - Sprint 26: Documentation alignment and Phase 3.1 planning](#2026-03-23---sprint-26-documentation-alignment-and-phase-31-planning)
@@ -59,6 +60,39 @@ It is a living document that will be updated as the project evolves.
 - [[2026-01-17] - Phase 1: Base utils & authentication modules](#2026-01-17---phase-1-base-utils--authentication-modules)
 - [[2026-01-16] - Phase 1: Initial project setup & tooling](#2026-01-16---phase-1-initial-project-setup--tooling)
 </details>
+
+---
+
+## [2026-03-30] - Phase 3.1: Reports CSV Export, Tests & Documentation
+
+### Context & Goals
+
+Close **`phase31-13`** (reports CSV export, automated tests, documentation alignment) so the insights workstream matches the canonical docs and the product contract: users can download a **user-scoped, filter-aligned** transaction CSV, the behaviour is covered by Django tests, and readers of PRD / MODULES / FLOWS see the real routes and export semantics—not a “planned” Phase 3.1 sketch. Also improve discoverability: the reports dashboard was only reachable by URL until this sprint.
+
+### Technical Implementation
+
+- **CSV export (`reports/views.py`):** 
+    - `TransactionCsvExportView` (`LoginRequiredMixin`, `GET`) validates `ReportsFilterForm` bound to `request.GET`; invalid filters (e.g. `date_from` > `date_to`) return `HttpResponseBadRequest` with form errors as plain text. 
+    - Success path streams rows via `csv.writer` with fixed columns (`id`, `created_at`, `type`, `amount`, `flow`, `from_username`, `to_username`, `description`, `balance_after`), `Content-Type: text/csv; charset=utf-8`, and `Content-Disposition: attachment` filename `transactions_export.csv`. 
+    - Empty queryset still returns a valid CSV with **header only**.
+- **Services (`reports/services.py`):** 
+    - `get_filtered_transactions_for_user` centralizes the same filter kwargs as the dashboard on top of `_filtered_user_transactions`, with `select_related("from_user", "to_user")` and stable ordering (`-created_at`, `-id`). 
+    - `transaction_flow_for_user` labels each row `income` / `expense` from the viewer’s perspective (self-transfer resolves to `expense` to match dashboard double-count semantics).
+- **Routing (`reports/urls.py`):** `export/` named `reports:export` under the existing `reports/` prefix.
+- **Dashboard UI (`reports/templates/reports/dashboard.html`):** **Export CSV** submit button uses `formaction` pointing to `reports:export` so current filter fields are submitted as GET parameters without requiring a separate “Apply” step.
+    - **Form binding fix (`reports/views.py`):** `DashboardView` and `TransactionCsvExportView` bind `ReportsFilterForm(self.request.GET)` / `ReportsFilterForm(request.GET)` instead of `request.GET or None`. An empty `QueryDict` is falsy in Python, so the old pattern left the form **unbound** and `is_valid()` was always false—breaking export with no query string (400 instead of header-only CSV). The dashboard now treats an empty GET as valid optional filters.
+- **Tests (`reports/tests.py`):** 
+    - `TransactionCsvExportViewTests` cover anonymous redirect, invalid dates (400), empty export (header only), isolation (user A never sees B–C-only transactions), `filter=expense` and `tx_type=deposit` scope, and row count parity with `get_filtered_transactions_for_user`. 
+    - `TransactionFlowForUserTests` cover deposit → `income`, outgoing transfer → `expense`, self-transfer → `expense`. 
+    - Helpers `EXPECTED_CSV_HEADER` and `_parse_csv_response` keep assertions readable.
+- **Navigation (`wallet/templates/wallet/transactions.html`):** 
+    - **Reports** button below the My Movements table links to `reports:dashboard`.
+- **Documentation (canonical set):** 
+    - Updated [MODULES.md](../MODULES.md), [FLOWS.md](../FLOWS.md), [PRD.md](../PRD.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [DATABASE.md](../DATABASE.md), [CLASS_DIAGRAM.md](../CLASS_DIAGRAM.md), [ROADMAP.md](../ROADMAP.md), and [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md). 
+
+### 💡 Deep Dive: One filter contract, two representations
+
+The dashboard and CSV export share **`ReportsFilterForm`** and the same GET parameter names (`date_from`, `date_to`, `filter`, `tx_type`). Aggregates on the page intentionally **count roles separately** for transfers (`get_user_financial_summary` transaction count), while the CSV emits **one row per transaction**; tests assert export row count against `get_filtered_transactions_for_user().count()`, not the summary counter, to avoid a subtle false failure. Keeping validation strict (400 on bad dates) avoids serving a misleading file when the user’s intent is ambiguous.
 
 ---
 
@@ -124,7 +158,7 @@ Close **`phase31-10`** (insights dashboard, filters, charts) by shipping a dedic
 Aggregations stay in the database: filtered querysets use `annotate`/`aggregate` so the app ships summaries, not full transaction lists. The view never hand-builds JSON strings for charts; it passes plain dicts into the template and uses the **`json_script`** filter so data is HTML-escaped and consumed as `textContent` in JavaScript—this avoids `mark_safe` and reduces XSS risk compared to embedding raw JSON in attributes. The static initializer stays thin: it only bridges DOM payloads to Chart.js configuration, keeping business rules and labeling on the Python side.
 
 ### Next Steps
-- **`phase31-13`:** CSV (or similar) export of the **currently filtered** report set, reusing the same service/query patterns.
+- **`phase31-13`:** Delivered 2026-03-30 — see [Phase 3.1: Reports CSV Export, Tests & Documentation](#2026-03-30---phase-31-reports-csv-export-tests--documentation).
 - Optional hardening: document or test edge cases for legacy rows where `from_user`/`to_user` might not match deposit semantics (see project notes on net flow vs historical data).
 - Keep `SPRINTS.md` / issue tracker in sync with shipped checklist items for this phase.
 
