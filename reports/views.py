@@ -18,7 +18,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        form = ReportsFilterForm(self.request.GET or None)
+        form = ReportsFilterForm(self.request.GET)
         user = self.request.user
 
         context["user_has_transactions"] = Transaction.objects.filter(Q(from_user=user) | Q(to_user=user)).exists()
@@ -69,7 +69,7 @@ class TransactionCsvExportView(LoginRequiredMixin, View):
     """User-scoped CSV download; query params match ReportsFilterForm / dashboard."""
 
     def get(self, request, *args, **kwargs):
-        form = ReportsFilterForm(request.GET or None)
+        form = ReportsFilterForm(request.GET)
         if not form.is_valid():
             return HttpResponseBadRequest(form.errors.as_text() or "Invalid filters.")
 
