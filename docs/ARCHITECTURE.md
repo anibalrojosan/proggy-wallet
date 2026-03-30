@@ -22,10 +22,10 @@ The architecture follows a **classic Django web application** model: the browser
 * **Interface:** **Django** — URL routing, views (function- and class-based), Django Forms, Django ORM, and Django Templates.
 * **Technologies:** `Python 3.12+`, **Django**, **PostgreSQL**.
 
-### 2.3 Planned apps (Phase 3.1)
+### 2.3 Additional apps (Phase 3.1 — delivered)
 
-* **`profiles`:** `UserProfile` linked to `User`; profile edit and **avatar** uploads. Media storage strategy: [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
-* **`reports`:** Read-only **insights** over `wallet` models (aggregations, charts, CSV export). Does not introduce a second ledger; writes remain in `wallet`.
+* **`profiles`:** `UserProfile` linked to `User`; view at `/profile/me/`, edit at `/profile/me/edit/` with optional **avatar** uploads. Media storage strategy: [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md).
+* **`reports`:** Read-only **insights** over `wallet` models at `/reports/dashboard/` (aggregations, Chart.js); **CSV** export at `/reports/export/` (user-scoped, same GET filters as the dashboard). No second ledger; writes remain in `wallet`.
 
 ## 3. Data Flow (Request / Response)
 
@@ -93,4 +93,4 @@ Dependencies point **inward**: URLconf → views → (forms / models) → ORM �
 
 ---
 
-*Last updated: 23 March, 2026 — Django architecture; Phase 3.1 apps documented.*
+*Last updated: 30 March, 2026 — Django architecture; Phase 3.1 `profiles` and `reports` shipped.*

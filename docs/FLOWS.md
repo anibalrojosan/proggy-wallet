@@ -118,15 +118,17 @@ sequenceDiagram
     Browser->>User: Show paginated ledger
 ```
 
+From **My Movements**, the user may open **Reports** via a link to `GET /reports/dashboard/` (named route `reports:dashboard`).
+
 ## 5. Root URL
 
 `GET /` triggers a redirect to the named route **`menu`** (`/menu/`), implemented in `config/urls.py`.
 
 ---
 
-## 6. Planned flows — Phase 3.1 (`profiles`, `reports`)
+## 6. Phase 3.1 flows — `profiles` and `reports` (implemented)
 
-The following are **not yet implemented**; paths are illustrative (see [MODULES.md](MODULES.md)).
+Paths match [MODULES.md](MODULES.md) and `config/urls.py`.
 
 ### 6.1 View / edit profile and avatar
 
@@ -136,62 +138,84 @@ sequenceDiagram
     participant Browser
     participant View as profiles.views
     participant Form as ProfileForm
-    participant Storage as FileSystemStorage or S3
+    participant Storage as MediaStorage
     participant DB as PostgreSQL
 
-    User->>Browser: Open profile / edit form
-    Browser->>View: GET /profile/ (example path)
-    View->>DB: Load User + UserProfile
-    View-->>Browser: Render form
-    User->>Browser: Submit profile / optional image
-    Browser->>View: POST /profile/ (CSRF, multipart if file)
+    User->>Browser: Open profile or edit
+    Browser->>View: GET /profile/me/ or GET /profile/me/edit/
+    View->>View: LoginRequiredMixin
+    View->>DB: Load or create UserProfile for request.user
+    View-->>Browser: Render profile_detail or profile_form
+    User->>Browser: Submit profile optional image
+    Browser->>View: POST /profile/me/edit/ CSRF multipart if file
     View->>Form: is_valid()
     alt Valid
-        View->>DB: Save User fields + UserProfile
+        View->>DB: Save UserProfile
         opt Avatar present
-            View->>Storage: Save under MEDIA per ADR-04
+            View->>Storage: Save under MEDIA_ROOT per ADR-04
         end
-        View-->>Browser: Redirect + success message
+        View-->>Browser: Redirect to profile detail
     else Invalid
         View-->>Browser: Re-render with errors
     end
 ```
 
-### 6.2 Insights dashboard (read-only)
+### 6.2 Reports dashboard (read-only)
 
 ```mermaid
 sequenceDiagram
     participant User
     participant Browser
-    participant View as reports.views
+    participant View as reports.views.DashboardView
+    participant Form as ReportsFilterForm
+    participant Svc as reports.services
     participant ORM as Django ORM
     participant DB as PostgreSQL
 
-    User->>Browser: Open insights page
-    Browser->>View: GET /insights/ (example path)
+    User->>Browser: Open reports dashboard
+    Browser->>View: GET /reports/dashboard/?date_from=... optional
     View->>View: LoginRequiredMixin
-    View->>ORM: Aggregate/filter wallet.Transaction for request.user
-    ORM->>DB: SELECT (read-only)
-    DB-->>View: Rows / aggregates
-    View-->>Browser: Render reports template (charts/tables)
+    View->>Form: bind request.GET
+    alt Form valid
+        View->>Svc: summaries monthly rows type breakdown filtered user
+        Svc->>ORM: read only queries on Transaction
+        ORM->>DB: SELECT aggregates
+        DB-->>View: context for charts and KPIs
+        View-->>Browser: Render dashboard.html Chart.js payloads
+    else Form invalid
+        View-->>Browser: Re-render with errors unfiltered aggregates
+    end
 ```
 
 ### 6.3 CSV export (user-scoped)
 
+Same filter contract as the dashboard: query params `date_from`, `date_to`, `filter` (income or expense), `tx_type`. Invalid date range returns **400** with form errors (no CSV body). Empty result set returns **200** with header row only. Anonymous users are redirected to login.
+
 ```mermaid
 sequenceDiagram
     participant User
     participant Browser
-    participant View as reports.views
+    participant View as TransactionCsvExportView
+    participant Form as ReportsFilterForm
+    participant Svc as reports.services
     participant DB as PostgreSQL
 
-    User->>Browser: Request export (link or POST)
-    Browser->>View: GET export endpoint with same scope as UI filters
-    View->>View: LoginRequiredMixin, build queryset for current user only
-    View->>DB: Read transactions (or summary rows)
-    View-->>Browser: text/csv response (attachment)
+    User->>Browser: Apply filters optional click Export CSV
+    Browser->>View: GET /reports/export/? same params as dashboard form
+    View->>View: LoginRequiredMixin
+    View->>Form: bind request.GET
+    alt Form invalid
+        View-->>Browser: 400 Bad Request text plain
+    else Form valid
+        View->>Svc: get_filtered_transactions_for_user request.user
+        Svc->>DB: SELECT transactions read only
+        DB-->>View: rows
+        View-->>Browser: 200 text csv charset utf 8 attachment transactions_export.csv
+    end
 ```
+
+The dashboard **Export CSV** button submits the filter form with `formaction` pointing to `reports:export` so current field values are sent as GET parameters.
 
 ---
 
-*Last updated: 23 March, 2026 — Phase 3 implemented; Phase 3.1 planned.*
+*Last updated: 30 March, 2026 — Phase 3.1 flows implemented (profiles, reports, CSV).*

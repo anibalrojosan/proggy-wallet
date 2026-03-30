@@ -80,27 +80,27 @@ This document outlines the strategic technical progression from a basic Frontend
 
 ---
 
-## 🟣 Phase 3.1: Profiles & Insights (next implementation)
+## 🟣 Phase 3.1: Profiles & Insights (delivered)
 
 **Goal:** Extend the product with **`profiles`** and **`reports`** apps without changing core ledger rules in `wallet`.
 
 ### `profiles` app
 
-* **`UserProfile`** model (`OneToOne` to `User`): editable display fields (e.g. first/last name or display name — align with forms), optional bio, **avatar** upload.
-* Views and templates for **view/edit profile**; validation and size/type limits for images.
+* **`UserProfile`** model (`OneToOne` to `User`): optional **bio**, optional **avatar**; timestamps.
+* Views and templates for **view/edit profile** (`/profile/me/`, `/profile/me/edit/`); image validation in forms.
 * Avatar storage strategy: see [ADR-04](adr/04-user-avatar-storage-local-vs-object-storage.md) (local dev vs object storage in production).
 
 ### `reports` app (insights)
 
 * **Read-only** aggregations over existing `wallet` data (no duplicate source of truth for balances).
-* UI: summaries by period, simple charts (as appropriate), filters consistent with history semantics.
-* **Export:** at minimum **CSV** download of the user’s scoped transaction set (or summary export — document in PRD when implemented).
+* UI: `/reports/dashboard/` — KPIs, monthly and type charts, GET filters aligned with history semantics; entry link from **My Movements** (`/history/`).
+* **Export:** `GET /reports/export/` — CSV of **filtered transactions** for the current user (columns and query parameters in [PRD.md](PRD.md) §4.2).
 
 ### Deliverables checklist
 
-* [ ] `profiles` registered in `INSTALLED_APPS`, migrations, URLs, templates.
-* [ ] `reports` registered, URLs, templates, tests for aggregation/export boundaries.
-* [ ] `MEDIA_ROOT` / `MEDIA_URL` configured for development; production path documented per ADR-04.
+* [x] `profiles` registered in `INSTALLED_APPS`, migrations, URLs, templates.
+* [x] `reports` registered, URLs, templates, tests for aggregation/export boundaries.
+* [x] `MEDIA_ROOT` / `MEDIA_URL` configured for development (`config/settings/base.py`); production path documented per ADR-04.
 
 ---
 
@@ -140,4 +140,4 @@ This document outlines the strategic technical progression from a basic Frontend
 
 ---
 
-*Last updated: 23 March, 2026 — Phase 3 complete; Phase 3.1 planned (`profiles`, `reports`).*
+*Last updated: 30 March, 2026 — Phase 3 complete; Phase 3.1 delivered (`profiles`, `reports`, CSV).*
